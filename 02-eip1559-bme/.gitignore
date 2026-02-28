@@ -1,0 +1,13 @@
+# Foundry
+/out
+/cache
+/broadcast
+
+# Env — never commit private keys
+.env
+
+# Dependencies
+/lib
+
+# OS
+.DS_Store
