@@ -1,0 +1,13 @@
+# Foundry
+**/out/
+**/cache/
+**/broadcast/
+**/lib/
+
+# Env — never commit private keys
+.env
+**/.env
+
+# OS
+.DS_Store
+Thumbs.db
