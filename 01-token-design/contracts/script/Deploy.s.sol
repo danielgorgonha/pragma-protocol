@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.33;
 
 import "forge-std/Script.sol";
 import "../src/PragmaToken.sol";
@@ -27,9 +27,7 @@ contract DeployPragmaToken is Script {
         address team       = vm.envAddress("ADDR_TEAM");
         address reserve    = vm.envAddress("ADDR_RESERVE");
 
-        uint256 deployerKey = vm.envUint("PRIVATE_KEY");
-
-        vm.startBroadcast(deployerKey);
+        vm.startBroadcast();
 
         PragmaToken pgm = new PragmaToken(
             publicSale,
