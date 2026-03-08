@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pragma Access Gate — PGM</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='24' font-size='20'>PGM</text></svg>" />
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <style>
@@ -880,15 +881,39 @@ function toast(msg, type="info") {
   setTimeout(() => { el.className = ""; }, 4500);
 }
 function shortAddr(a) { return a.slice(0,6)+"..."+a.slice(-4); }
+
 function getEthProvider() {
-  const e = window.ethereum; if (!e) return null;
+  var e = window.ethereum; if (!e) return null;
   if (e.providers && Array.isArray(e.providers)) {
     var metaMask = e.providers.find(function(p) { return p.isMetaMask && !p.isNightly; });
-    if (metaMask) return metaMask;
-    return null;
+    return metaMask || null;
   }
   if (e.isNightly) return null;
-  return e;
+  if (e.isMetaMask) return e;
+  return null;
+}
+
+function getMetaMaskEIP6963() {
+  return new Promise(function(resolve) {
+    var found = null;
+    function onAnnounce(ev) {
+      var d = ev.detail;
+      if (!d || !d.provider) return;
+      var name = (d.info && d.info.name) ? d.info.name.toLowerCase() : "";
+      var rdns = (d.info && d.info.rdns) ? d.info.rdns.toLowerCase() : "";
+      if (name.indexOf("metamask") !== -1 || rdns.indexOf("metamask") !== -1) {
+        found = d.provider;
+        window.removeEventListener("eip6963:announceProvider", onAnnounce);
+        resolve(found);
+      }
+    }
+    window.addEventListener("eip6963:announceProvider", onAnnounce);
+    window.dispatchEvent(new Event("eip6963:requestProvider"));
+    setTimeout(function() {
+      window.removeEventListener("eip6963:announceProvider", onAnnounce);
+      resolve(found);
+    }, 800);
+  });
 }
 
 // ═══════════════════════════════════
@@ -952,26 +977,21 @@ async function connectWithProvider(p) {
 async function connectWallet() {
   if (!window.ethereum) { toast("Nenhuma carteira detectada. Instale MetaMask ou abra via servidor (não file://).", "err"); return; }
   try {
-    var p = getEthProvider();
-    if (p) {
-      try {
-        var ok = await connectWithProvider(p);
-        if (ok) return;
-      } catch (e1) {
-        var msg1 = (e1 && e1.message) ? e1.message : String(e1);
-        if (msg1.indexOf("No active wallet found") === -1 && msg1.indexOf("no active wallet") === -1 && msg1.indexOf("Unexpected error") === -1 && msg1.indexOf("selectExtension") === -1) throw e1;
-      }
+    var p = null;
+    p = await getMetaMaskEIP6963();
+    if (!p) p = getEthProvider();
+    if (!p) {
+      toast("MetaMask não encontrada. Com várias carteiras: abra em janela anónima só com MetaMask ou desative as outras (ex: Nightly, evmAsk).", "err");
+      return;
     }
-    if (window.ethereum && window.ethereum !== p) {
-      var ok = await connectWithProvider(window.ethereum);
-      if (ok) return;
-    }
-    toast("Não foi possível conectar. Defina uma carteira como ativa (ícone puzzle) ou use janela anónima só com MetaMask.", "err");
+    var ok = await connectWithProvider(p);
+    if (ok) return;
+    toast("Não foi possível conectar. Desbloqueie a MetaMask e tente de novo.", "err");
   } catch(e) {
-    const m = e?.message||String(e);
-    if (m.includes("4001")||m.includes("rejected")) toast("Conexão recusada.", "err");
-    else if (m.includes("Unexpected error")||m.includes("selectExtension")) toast("Erro ao selecionar carteira. Escolha MetaMask no popup ou desative outras extensões.", "err");
-    else if (m.includes("No active wallet found")||m.includes("no active wallet")) toast("Nenhuma carteira ativa. Defina MetaMask como ativa (ícone puzzle) ou use janela anónima só com MetaMask.", "err");
+    var m = (e && e.message) ? e.message : String(e);
+    if (m.indexOf("4001") !== -1 || m.indexOf("rejected") !== -1) toast("Conexão recusada.", "err");
+    else if (m.indexOf("Unexpected error") !== -1 || m.indexOf("selectExtension") !== -1) toast("Use janela anónima só com MetaMask ou desative o agregador de carteiras (evmAsk).", "err");
+    else if (m.indexOf("No active wallet found") !== -1 || m.indexOf("no active wallet") !== -1) toast("Nenhuma carteira ativa. Use janela anónima só com MetaMask.", "err");
     else toast("Erro: "+m.slice(0,80), "err");
   }
 }
