@@ -8,27 +8,41 @@ Repository for the Tokenomics postgraduate course. Each lesson adds a layer to t
 
 ## Contents
 
-Two lesson folders. Each has **reports** (required deliverables) and **contracts** (bonus implementation).
+Three lesson folders. Each has **reports** (required deliverables) and **contracts** or **dapp** (bonus implementation).
 
-| Folder | Reports | Contracts |
-|--------|---------|-----------|
+| Folder | Reports | Bonus |
+|--------|---------|-------|
 | [01-token-design/](./01-token-design/) | One-pager (PGM tokenomics), pitch script | PGM ERC-20 — utility token, 10M supply, 2% fee, premium access (Sepolia) |
 | [02-eip1559-bme/](./02-eip1559-bme/) | EIP-1559 case study (burn, deflationary periods, investors) | BMEToken — adaptive burn rate, EIP-1559 style (Foundry) |
+| [03-axie-autopsy/](./03-axie-autopsy/) | Axie Infinity tokenomics autopsy (dual-token, inflation, redesign) | DApp — Pragma Access Gate (marketplace, history, analytics, burn, approve) |
 
-**01** defines the base token (design, distribution, payment + access). **02** adds the economic model: BME adaptive burn inspired by EIP-1559. The PGM token can later be extended with the BME mechanism.
+**01** defines the base token (design, distribution, payment + access). **02** adds the economic model: BME adaptive burn inspired by EIP-1559. **03** analyses the Axie collapse and demonstrates PGM utility via a live DApp with tier gating and marketplace simulation.
 
 ## Structure
 
 ```
 bme-model/
 ├── README.md
+├── index.html         GitHub Pages hub (links to DApp)
 ├── 01-token-design/
 │   ├── reports/       OnePager_PGM.md, Pitch_Roteiro.md (+ .docx/.pptx)
 │   └── contracts/     PragmaToken.sol, tests, deploy script
 ├── 02-eip1559-bme/
 │   ├── reports/       EIP1559_BME.md (+ .docx)
 │   └── contracts/     BMEToken.sol, tests, deploy script
+└── 03-axie-autopsy/
+    ├── reports/       Axie_Autopsy.md (+ .docx, .pdf)
+    └── dapp/          Pragma Access Gate DApp (single-page, Sepolia)
 ```
+
+## Live DApp
+
+The lesson 03 DApp is published on GitHub Pages:
+
+- **Hub:** [https://danielgorgonha.github.io/pragma-protocol/](https://danielgorgonha.github.io/pragma-protocol/)
+- **DApp (Pragma Access Gate):** [https://danielgorgonha.github.io/pragma-protocol/03-axie-autopsy/dapp/](https://danielgorgonha.github.io/pragma-protocol/03-axie-autopsy/dapp/)
+
+Connect MetaMask on Sepolia to check your PGM tier, transfer tokens, use the marketplace simulation, view tx history, approve/allowance, and burn to the dead address.
 
 ## Deployed contracts (Sepolia)
 
