@@ -361,11 +361,15 @@ let ethereumProvider = null; // single provider for wallet_switchEthereumChain e
 function getEthereumProvider() {
   const e = window.ethereum;
   if (!e) return null;
-  // Multiple wallets: prefer MetaMask, else first provider
+  // Multiple wallets: use only MetaMask; ignore Nightly and others
   if (e.providers && Array.isArray(e.providers)) {
-    const metaMask = e.providers.find(function (p) { return p.isMetaMask; });
-    return metaMask || e.providers[0] || e;
+    const metaMask = e.providers.find(function (p) {
+      return p.isMetaMask && !p.isNightly;
+    });
+    return metaMask || null;
   }
+  // Single provider: do not use Nightly
+  if (e.isNightly) return null;
   return e;
 }
 
@@ -383,7 +387,7 @@ function shortAddr(addr) {
 async function connectWallet() {
   ethereumProvider = getEthereumProvider();
   if (!ethereumProvider) {
-    toast("MetaMask não detectada. Se já instalou: abra esta página via servidor local (ex: npx serve dapp/). Se não, instale a extensão MetaMask.", "err");
+    toast("MetaMask não disponível para esta página. Esta DApp usa só MetaMask: desative outras carteiras (ex: Nightly) ou abra em janela anónima só com MetaMask.", "err");
     return;
   }
   try {
