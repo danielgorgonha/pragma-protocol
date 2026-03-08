@@ -882,7 +882,11 @@ function toast(msg, type="info") {
 function shortAddr(a) { return a.slice(0,6)+"..."+a.slice(-4); }
 function getEthProvider() {
   const e = window.ethereum; if (!e) return null;
-  if (e.providers?.length) return e.providers.find(p => p.isMetaMask && !p.isNightly) || null;
+  if (e.providers && Array.isArray(e.providers)) {
+    var metaMask = e.providers.find(function(p) { return p.isMetaMask && !p.isNightly; });
+    if (metaMask) return metaMask;
+    return null;
+  }
   if (e.isNightly) return null;
   return e;
 }
@@ -902,8 +906,8 @@ function showTab(id) {
 // WALLET
 // ═══════════════════════════════════
 async function connectWithProvider(p) {
-  const accounts = await p.request({ method:"eth_requestAccounts" });
-  if (!accounts?.length) return null;
+  const accounts = await p.request({ method:"eth_requestAccounts", params: [] });
+  if (!accounts || accounts.length === 0) return null;
   ethereumProvider = p;
   provider = new ethers.providers.Web3Provider(ethereumProvider);
   const net = await provider.getNetwork();
@@ -955,7 +959,7 @@ async function connectWallet() {
         if (ok) return;
       } catch (e1) {
         var msg1 = (e1 && e1.message) ? e1.message : String(e1);
-        if (msg1.indexOf("No active wallet found") === -1 && msg1.indexOf("no active wallet") === -1) throw e1;
+        if (msg1.indexOf("No active wallet found") === -1 && msg1.indexOf("no active wallet") === -1 && msg1.indexOf("Unexpected error") === -1 && msg1.indexOf("selectExtension") === -1) throw e1;
       }
     }
     if (window.ethereum && window.ethereum !== p) {
@@ -967,6 +971,7 @@ async function connectWallet() {
     const m = e?.message||String(e);
     if (m.includes("4001")||m.includes("rejected")) toast("Conexão recusada.", "err");
     else if (m.includes("Unexpected error")||m.includes("selectExtension")) toast("Erro ao selecionar carteira. Escolha MetaMask no popup ou desative outras extensões.", "err");
+    else if (m.includes("No active wallet found")||m.includes("no active wallet")) toast("Nenhuma carteira ativa. Defina MetaMask como ativa (ícone puzzle) ou use janela anónima só com MetaMask.", "err");
     else toast("Erro: "+m.slice(0,80), "err");
   }
 }
