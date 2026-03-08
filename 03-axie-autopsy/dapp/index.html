@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pragma Access Gate — PGM Token</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --accent: #2E75B6;
+      --accent2: #58a6ff;
+      --green: #3fb950;
+      --yellow: #d29922;
+      --red: #f85149;
+      --text: #c9d1d9;
+      --muted: #8b949e;
+      --white: #e6edf3;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-mark {
+      width: 32px; height: 32px;
+      background: var(--accent);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 14px; color: #fff;
+      letter-spacing: -1px;
+    }
+    header h1 { font-size: 16px; font-weight: 600; color: var(--white); }
+    header span { font-size: 13px; color: var(--muted); margin-left: 4px; }
+    .header-right { margin-left: auto; }
+    .network-badge {
+      font-size: 12px; background: var(--surface2);
+      border: 1px solid var(--border); border-radius: 20px;
+      padding: 4px 12px; color: var(--muted);
+    }
+    .network-badge .dot {
+      display: inline-block; width: 7px; height: 7px;
+      border-radius: 50%; background: var(--yellow);
+      margin-right: 6px;
+    }
+    .network-badge.connected .dot { background: var(--green); }
+
+    /* ── Main ── */
+    main {
+      flex: 1;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 48px 24px;
+      width: 100%;
+    }
+
+    .hero { text-align: center; margin-bottom: 40px; }
+    .hero h2 { font-size: 28px; font-weight: 700; color: var(--white); margin-bottom: 8px; }
+    .hero p { color: var(--muted); font-size: 15px; line-height: 1.5; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 13px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--muted); margin-bottom: 16px;
+    }
+
+    /* ── Connect button ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 20px; border-radius: 8px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      border: none; transition: all 0.15s;
+    }
+    .btn-primary {
+      background: var(--accent); color: #fff;
+    }
+    .btn-primary:hover { background: #1a5fa8; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-ghost {
+      background: var(--surface2); color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { border-color: var(--accent2); }
+    .btn-full { width: 100%; justify-content: center; }
+
+    /* ── Access Tier ── */
+    .tier {
+      display: flex; align-items: center; gap: 16px;
+      padding: 16px; border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-top: 12px;
+      transition: all 0.3s;
+    }
+    .tier.active { border-color: currentColor; }
+    .tier-icon { font-size: 28px; }
+    .tier-info { flex: 1; }
+    .tier-name { font-weight: 700; font-size: 16px; }
+    .tier-desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .tier-req { font-size: 12px; margin-top: 4px; }
+    .tier-check { font-size: 22px; }
+
+    .tier-premium  { color: #d29922; }
+    .tier-buyer    { color: var(--accent2); }
+    .tier-none     { color: var(--muted); }
+    .tier-loading  { color: var(--muted); }
+
+    /* ── Stats grid ── */
+    .stats {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 12px; margin-top: 8px;
+    }
+    .stat {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px 16px;
+    }
+    .stat-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .stat-value { font-size: 20px; font-weight: 700; color: var(--white); }
+
+    /* ── Transfer form ── */
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    .form-group input {
+      width: 100%;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 14px;
+      color: var(--white); font-size: 14px;
+      outline: none; transition: border 0.15s;
+    }
+    .form-group input:focus { border-color: var(--accent2); }
+    .form-group input::placeholder { color: var(--muted); }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      padding: 12px 20px; border-radius: 8px;
+      font-size: 14px; font-weight: 500;
+      opacity: 0; transition: opacity 0.3s;
+      pointer-events: none; max-width: 360px;
+      border: 1px solid;
+    }
+    #toast.show { opacity: 1; }
+    #toast.ok   { background: #0d3321; color: var(--green); border-color: var(--green); }
+    #toast.err  { background: #300a0a; color: var(--red);   border-color: var(--red); }
+    #toast.info { background: #0d2140; color: var(--accent2); border-color: var(--accent2); }
+
+    /* ── Address chip ── */
+    .address-chip {
+      font-family: monospace; font-size: 13px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 20px; padding: 4px 12px; color: var(--text);
+    }
+
+    /* ── Contract link ── */
+    .contract-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; margin-top: 8px;
+    }
+    .contract-row a {
+      font-family: monospace; font-size: 12px;
+      color: var(--accent2); text-decoration: none;
+      word-break: break-all;
+    }
+    .contract-row a:hover { text-decoration: underline; }
+
+    /* ── Divider ── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center; padding: 20px;
+      font-size: 12px; color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--accent2); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">PGM</div>
+  <div>
+    <h1>Pragma Access Gate <span>/ DApp</span></h1>
+  </div>
+  <div class="header-right">
+    <div class="network-badge" id="networkBadge">
+      <span class="dot"></span>Sepolia Testnet
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <h2>Pragma Token — Gating de Acesso</h2>
+    <p>Demonstração da utilidade do PGM: saldo determina nível de acesso ao ecossistema.<br/>
+    500+ PGM → Premium · 200+ PGM → Buyer · &lt;200 PGM → Sem acesso</p>
+  </div>
+
+  <!-- Connect -->
+  <div class="card" id="connectCard">
+    <div class="card-title">Carteira</div>
+    <div id="connectSection">
+      <p style="color:var(--muted);font-size:14px;margin-bottom:16px;">
+        Conecte sua MetaMask na rede Sepolia para verificar seu nível de acesso.
+      </p>
+      <p style="color:var(--muted);font-size:12px;margin-bottom:16px;">
+        Se a MetaMask não for detectada, abra esta página via servidor local: <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;">npx serve dapp/</code> na pasta do projeto (não abra o arquivo direto pelo navegador).
+      </p>
+      <button class="btn btn-primary btn-full" onclick="connectWallet()">
+        🦊 Conectar MetaMask
+      </button>
+    </div>
+    <div id="connectedSection" style="display:none;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <span style="font-size:13px;color:var(--muted);">Endereço:</span>
+        <span class="address-chip" id="walletAddr">—</span>
+        <button class="btn btn-ghost" onclick="disconnectWallet()" style="padding:4px 12px;font-size:12px;margin-left:auto;">
+          Desconectar
+        </button>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Saldo PGM</div>
+          <div class="stat-value" id="pgmBalance">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">ETH (Sepolia)</div>
+          <div class="stat-value" id="ethBalance">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Access Tier -->
+  <div class="card" id="tierCard" style="display:none;">
+    <div class="card-title">Nível de Acesso</div>
+
+    <div class="tier tier-premium" id="tierPremium">
+      <div class="tier-icon">👑</div>
+      <div class="tier-info">
+        <div class="tier-name">Premium</div>
+        <div class="tier-desc">Acesso completo: marketplace, analytics avançado, fee reduzida</div>
+        <div class="tier-req">Requer ≥ 500 PGM</div>
+      </div>
+      <div class="tier-check" id="checkPremium">⬜</div>
+    </div>
+
+    <div class="tier tier-buyer" id="tierBuyer">
+      <div class="tier-icon">🛒</div>
+      <div class="tier-info">
+        <div class="tier-name">Buyer</div>
+        <div class="tier-desc">Acesso ao marketplace para compra de serviços</div>
+        <div class="tier-req">Requer ≥ 200 PGM</div>
+      </div>
+      <div class="tier-check" id="checkBuyer">⬜</div>
+    </div>
+
+    <div class="tier tier-none" id="tierNone">
+      <div class="tier-icon">🔒</div>
+      <div class="tier-info">
+        <div class="tier-name">Sem Acesso</div>
+        <div class="tier-desc">Obtenha PGM via faucet ou compra no marketplace</div>
+        <div class="tier-req">Saldo insuficiente</div>
+      </div>
+      <div class="tier-check" id="checkNone">⬜</div>
+    </div>
+  </div>
+
+  <!-- Transfer -->
+  <div class="card" id="transferCard" style="display:none;">
+    <div class="card-title">Transferir PGM</div>
+    <div class="form-group">
+      <label>Endereço destinatário</label>
+      <input type="text" id="toAddress" placeholder="0x..." />
+    </div>
+    <div class="form-group">
+      <label>Quantidade (PGM)</label>
+      <input type="number" id="transferAmount" placeholder="ex: 100" min="1" step="1" />
+    </div>
+    <button class="btn btn-primary btn-full" id="transferBtn" onclick="transferPGM()">
+      Enviar PGM
+    </button>
+    <div id="txLink" style="display:none;margin-top:12px;">
+      <div class="contract-row">
+        <span style="font-size:13px;color:var(--muted);">Tx:</span>
+        <a id="txLinkAnchor" href="#" target="_blank">—</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contract info -->
+  <div class="card">
+    <div class="card-title">Contrato</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-bottom:8px;">
+      <span>Pragma Token (PGM)</span>
+      <span>·</span>
+      <span>ERC-20</span>
+      <span>·</span>
+      <span>Supply fixo: 10.000.000 PGM</span>
+      <span>·</span>
+      <span>Sepolia</span>
+    </div>
+    <div class="contract-row">
+      <span style="font-size:12px;color:var(--muted);">📋</span>
+      <a href="https://sepolia.etherscan.io/address/0xC7b1Fff31eC9ce8075C1fCE0339E751135e310eb"
+         target="_blank">
+        0xC7b1Fff31eC9ce8075C1fCE0339E751135e310eb
+      </a>
+    </div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<footer>
+  Pragma Protocol · Aula 03 Bônus · NearX Tokenomics ·
+  <a href="https://github.com/danielgorgonha/pragma-protocol" target="_blank">GitHub</a>
+</footer>
+
+<script>
+const PGM_ADDRESS = "0xC7b1Fff31eC9ce8075C1fCE0339E751135e310eb";
+const PGM_ABI = [
+  "function balanceOf(address) view returns (uint256)",
+  "function transfer(address to, uint256 amount) returns (bool)",
+  "function decimals() view returns (uint8)",
+  "function symbol() view returns (string)",
+  "function name() view returns (string)",
+  "function totalSupply() view returns (uint256)",
+  "event Transfer(address indexed from, address indexed to, uint256 value)"
+];
+
+let provider, signer, pgm, userAddress;
+
+function toast(msg, type = "info") {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  setTimeout(() => { el.className = ""; }, 4000);
+}
+
+function shortAddr(addr) {
+  return addr.slice(0, 6) + "..." + addr.slice(-4);
+}
+
+async function connectWallet() {
+  if (!window.ethereum) {
+    toast("MetaMask não detectada. Se já instalou: abra esta página via servidor local (ex: npx serve dapp/). Se não, instale a extensão MetaMask.", "err");
+    return;
+  }
+  try {
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+
+    const network = await provider.getNetwork();
+    if (network.chainId !== 11155111) {
+      toast("Troque para Sepolia Testnet (chainId 11155111)", "err");
+      try {
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0xaa36a7" }]
+        });
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+      } catch(e) { return; }
+    }
+
+    signer = provider.getSigner();
+    userAddress = await signer.getAddress();
+    pgm = new ethers.Contract(PGM_ADDRESS, PGM_ABI, signer);
+
+    document.getElementById("networkBadge").classList.add("connected");
+    document.getElementById("walletAddr").textContent = shortAddr(userAddress);
+    document.getElementById("connectSection").style.display = "none";
+    document.getElementById("connectedSection").style.display = "block";
+    document.getElementById("tierCard").style.display = "block";
+    document.getElementById("transferCard").style.display = "block";
+
+    await refreshBalances();
+
+    // listen for transfers
+    pgm.on("Transfer", async (from, to) => {
+      if (from.toLowerCase() === userAddress.toLowerCase() ||
+          to.toLowerCase()   === userAddress.toLowerCase()) {
+        await refreshBalances();
+      }
+    });
+
+    window.ethereum.on("accountsChanged", () => location.reload());
+    window.ethereum.on("chainChanged",    () => location.reload());
+
+    toast("Conectado com sucesso! ✓", "ok");
+  } catch(e) {
+    toast("Erro ao conectar: " + (e.message || e), "err");
+  }
+}
+
+async function refreshBalances() {
+  if (!pgm) return;
+  const [pgmRaw, ethRaw] = await Promise.all([
+    pgm.balanceOf(userAddress),
+    provider.getBalance(userAddress)
+  ]);
+  const pgmBalance = parseFloat(ethers.utils.formatUnits(pgmRaw, 18));
+  const ethBalance = parseFloat(ethers.utils.formatEther(ethRaw));
+
+  document.getElementById("pgmBalance").textContent =
+    pgmBalance.toLocaleString("pt-BR", { maximumFractionDigits: 2 }) + " PGM";
+  document.getElementById("ethBalance").textContent =
+    ethBalance.toFixed(4) + " ETH";
+
+  updateTier(pgmBalance);
+}
+
+function updateTier(balance) {
+  const isPremium = balance >= 500;
+  const isBuyer   = balance >= 200 && !isPremium;
+  const isNone    = balance < 200;
+
+  // reset
+  ["Premium","Buyer","None"].forEach(t => {
+    document.getElementById("tier"+t).classList.remove("active");
+    document.getElementById("check"+t).textContent = "⬜";
+  });
+
+  if (isPremium) {
+    document.getElementById("tierPremium").classList.add("active");
+    document.getElementById("checkPremium").textContent = "✅";
+  } else if (isBuyer) {
+    document.getElementById("tierBuyer").classList.add("active");
+    document.getElementById("checkBuyer").textContent = "✅";
+  } else {
+    document.getElementById("tierNone").classList.add("active");
+    document.getElementById("checkNone").textContent = "✅";
+  }
+}
+
+async function transferPGM() {
+  if (!pgm) { toast("Conecte sua carteira primeiro", "err"); return; }
+
+  const to = document.getElementById("toAddress").value.trim();
+  const amount = document.getElementById("transferAmount").value.trim();
+
+  if (!ethers.utils.isAddress(to)) {
+    toast("Endereço inválido", "err"); return;
+  }
+  if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+    toast("Quantidade inválida", "err"); return;
+  }
+
+  const btn = document.getElementById("transferBtn");
+  btn.disabled = true;
+  btn.textContent = "Enviando...";
+  document.getElementById("txLink").style.display = "none";
+
+  try {
+    const parsed = ethers.utils.parseUnits(amount, 18);
+    const tx = await pgm.transfer(to, parsed);
+    toast("Transação enviada! Aguardando confirmação...", "info");
+
+    const receipt = await tx.wait();
+    const anchor = document.getElementById("txLinkAnchor");
+    anchor.href = `https://sepolia.etherscan.io/tx/${receipt.transactionHash}`;
+    anchor.textContent = receipt.transactionHash;
+    document.getElementById("txLink").style.display = "block";
+
+    toast(`${amount} PGM enviados! ✓`, "ok");
+    document.getElementById("toAddress").value = "";
+    document.getElementById("transferAmount").value = "";
+    await refreshBalances();
+  } catch(e) {
+    toast("Erro: " + (e.reason || e.message || "falha na transação"), "err");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Enviar PGM";
+  }
+}
+
+function disconnectWallet() {
+  provider = signer = pgm = userAddress = null;
+  document.getElementById("networkBadge").classList.remove("connected");
+  document.getElementById("connectSection").style.display = "block";
+  document.getElementById("connectedSection").style.display = "none";
+  document.getElementById("tierCard").style.display = "none";
+  document.getElementById("transferCard").style.display = "none";
+  toast("Desconectado", "info");
+}
+</script>
+</body>
+</html>
