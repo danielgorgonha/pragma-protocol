@@ -3,548 +3,1213 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pragma Access Gate — PGM Token</title>
+  <title>Pragma Access Gate — PGM</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --surface2: #21262d;
-      --border: #30363d;
-      --accent: #2E75B6;
-      --accent2: #58a6ff;
-      --green: #3fb950;
-      --yellow: #d29922;
-      --red: #f85149;
-      --text: #c9d1d9;
-      --muted: #8b949e;
-      --white: #e6edf3;
+      --bg:      #030308;
+      --bg1:     #070712;
+      --bg2:     #0c0c1e;
+      --bg3:     #11112a;
+      --cyan:    #00f5ff;
+      --cyan2:   #00bcd4;
+      --magenta: #ff0090;
+      --green:   #00ff41;
+      --yellow:  #ffe600;
+      --red:     #ff3333;
+      --purple:  #9945ff;
+      --text:    #c8d6e5;
+      --muted:   #556177;
+      --white:   #e8f0ff;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-family: 'Share Tech Mono', monospace;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,245,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,245,255,.035) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 2px,
+        rgba(0,0,0,.12) 2px, rgba(0,0,0,.12) 4px
+      );
+      pointer-events: none; z-index: 0;
     }
 
-    /* ── Header ── */
+    /* ── HEADER ── */
     header {
-      border-bottom: 1px solid var(--border);
-      padding: 16px 32px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      position: sticky; top: 0; z-index: 100;
+      border-bottom: 1px solid rgba(0,245,255,.18);
+      padding: 0 28px;
+      height: 58px;
+      display: flex; align-items: center; gap: 16px;
+      background: rgba(3,3,8,.94);
+      backdrop-filter: blur(14px);
     }
-    .logo-mark {
-      width: 32px; height: 32px;
-      background: var(--accent);
-      border-radius: 6px;
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-hex {
+      width: 38px; height: 38px;
+      border: 2px solid var(--cyan);
+      clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
       display: flex; align-items: center; justify-content: center;
-      font-weight: 900; font-size: 14px; color: #fff;
-      letter-spacing: -1px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 9px; font-weight: 900; color: var(--cyan);
+      box-shadow: 0 0 14px rgba(0,245,255,.4), inset 0 0 10px rgba(0,245,255,.05);
     }
-    header h1 { font-size: 16px; font-weight: 600; color: var(--white); }
-    header span { font-size: 13px; color: var(--muted); margin-left: 4px; }
-    .header-right { margin-left: auto; }
-    .network-badge {
-      font-size: 12px; background: var(--surface2);
-      border: 1px solid var(--border); border-radius: 20px;
-      padding: 4px 12px; color: var(--muted);
+    .logo-text {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 14px; font-weight: 700; color: var(--white); letter-spacing: 2px;
     }
-    .network-badge .dot {
-      display: inline-block; width: 7px; height: 7px;
-      border-radius: 50%; background: var(--yellow);
-      margin-right: 6px;
+    .logo-text em { color: var(--cyan); font-style: normal; }
+    .logo-sub { font-size: 10px; color: var(--muted); letter-spacing: 1.5px; margin-top: 1px; }
+    nav { display: flex; gap: 2px; margin-left: 28px; }
+    .nav-tab {
+      padding: 7px 16px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px; color: var(--muted);
+      background: transparent; border: none;
+      cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase;
+      transition: all .2s;
+      clip-path: polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
     }
-    .network-badge.connected .dot { background: var(--green); }
+    .nav-tab:hover { color: var(--cyan); background: rgba(0,245,255,.06); }
+    .nav-tab.active { color: var(--cyan); background: rgba(0,245,255,.1); }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .net-badge {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 10px; color: var(--muted); letter-spacing: 1.5px;
+      padding: 5px 14px;
+      border: 1px solid rgba(0,245,255,.12);
+      clip-path: polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);
+      background: rgba(0,245,255,.04);
+    }
+    .net-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--muted); transition: all .3s;
+    }
+    .net-badge.connected .net-dot {
+      background: var(--green); box-shadow: 0 0 8px var(--green);
+      animation: blink 2s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
 
-    /* ── Main ── */
+    /* ── SECTIONS ── */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ── MAIN ── */
     main {
-      flex: 1;
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 48px 24px;
-      width: 100%;
+      position: relative; z-index: 1;
+      max-width: 920px; margin: 0 auto;
+      padding: 44px 24px 80px;
     }
 
-    .hero { text-align: center; margin-bottom: 40px; }
-    .hero h2 { font-size: 28px; font-weight: 700; color: var(--white); margin-bottom: 8px; }
-    .hero p { color: var(--muted); font-size: 15px; line-height: 1.5; }
+    /* ── HERO ── */
+    .hero { text-align: center; margin-bottom: 52px; }
+    .hero-eye {
+      font-size: 11px; letter-spacing: 5px; color: var(--cyan);
+      margin-bottom: 14px; text-transform: uppercase;
+    }
+    .hero-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(32px, 6vw, 56px);
+      font-weight: 900; color: var(--white);
+      line-height: 1.1; margin-bottom: 18px;
+    }
+    .hero-title .cy {
+      color: var(--cyan);
+      text-shadow: 0 0 24px var(--cyan), 0 0 80px rgba(0,245,255,.25);
+    }
+    @keyframes glitch {
+      0%,88%,100%{ clip-path:none; transform:none; color:inherit; }
+      90%{ clip-path:polygon(0 10%,100% 10%,100% 28%,0 28%); transform:translate(-4px,0); }
+      93%{ clip-path:polygon(0 55%,100% 55%,100% 73%,0 73%); transform:translate(4px,0); color:var(--magenta); }
+      95%{ clip-path:none; transform:none; }
+    }
+    .hero-title { animation: glitch 9s ease-in-out infinite; }
+    .hero-sub { font-size: 14px; color: var(--muted); line-height: 1.7; max-width: 540px; margin: 0 auto; }
+    .tier-pills { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+    .tp {
+      font-size: 11px; padding: 4px 14px; letter-spacing: 1px;
+      border: 1px solid;
+      clip-path: polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);
+    }
+    .tp.p { border-color: var(--yellow); color: var(--yellow); background: rgba(255,230,0,.05); }
+    .tp.b { border-color: var(--cyan);   color: var(--cyan);   background: rgba(0,245,255,.05); }
+    .tp.n { border-color: var(--muted);  color: var(--muted); }
 
-    /* ── Card ── */
+    /* ── CARD ── */
     .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
+      background: rgba(7,7,18,.85);
+      border: 1px solid rgba(0,245,255,.13);
+      padding: 24px; margin-bottom: 20px;
+      position: relative; overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute; top: 0; left: 0;
+      width: 3px; height: 100%;
+      background: var(--cyan); box-shadow: 0 0 10px var(--cyan);
+    }
+    .card.mg::before { background: var(--magenta); box-shadow: 0 0 10px var(--magenta); }
+    .card.gn::before { background: var(--green);   box-shadow: 0 0 10px var(--green); }
+    .card.pu::before { background: var(--purple);  box-shadow: 0 0 10px var(--purple); }
+    .card.yw::before { background: var(--yellow);  box-shadow: 0 0 10px var(--yellow); }
+    .card.rd::before { background: var(--red);     box-shadow: 0 0 10px var(--red); }
+    .card-hd {
+      display: flex; align-items: center; gap: 10px;
       margin-bottom: 20px;
     }
     .card-title {
-      font-size: 13px; font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.05em;
-      color: var(--muted); margin-bottom: 16px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 3px;
+      color: var(--cyan);
+    }
+    .card.mg .card-title { color: var(--magenta); }
+    .card.gn .card-title { color: var(--green); }
+    .card.pu .card-title { color: var(--purple); }
+    .card.yw .card-title { color: var(--yellow); }
+    .card.rd .card-title { color: var(--red); }
+    .card-tag {
+      margin-left: auto; font-size: 10px;
+      padding: 2px 8px; border: 1px solid rgba(0,245,255,.25);
+      color: var(--muted); letter-spacing: 1px;
     }
 
-    /* ── Connect button ── */
+    /* ── BUTTONS ── */
     .btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 10px 20px; border-radius: 8px;
-      font-size: 14px; font-weight: 600; cursor: pointer;
-      border: none; transition: all 0.15s;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 10px 24px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px; cursor: pointer; border: none;
+      letter-spacing: 1.5px; text-transform: uppercase; transition: all .2s;
+      clip-path: polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);
     }
-    .btn-primary {
-      background: var(--accent); color: #fff;
-    }
-    .btn-primary:hover { background: #1a5fa8; }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-cy { background: rgba(0,245,255,.1); border: 1px solid var(--cyan); color: var(--cyan); }
+    .btn-cy:hover { background: var(--cyan); color: var(--bg); box-shadow: 0 0 20px var(--cyan); }
+    .btn-mg { background: rgba(255,0,144,.1); border: 1px solid var(--magenta); color: var(--magenta); }
+    .btn-mg:hover { background: var(--magenta); color: #fff; box-shadow: 0 0 20px var(--magenta); }
+    .btn-gn { background: rgba(0,255,65,.1); border: 1px solid var(--green); color: var(--green); }
+    .btn-gn:hover { background: var(--green); color: var(--bg); box-shadow: 0 0 20px var(--green); }
+    .btn-rd { background: rgba(255,51,51,.1); border: 1px solid var(--red); color: var(--red); }
+    .btn-rd:hover { background: var(--red); color: #fff; box-shadow: 0 0 20px var(--red); }
     .btn-ghost {
-      background: var(--surface2); color: var(--text);
-      border: 1px solid var(--border);
+      background: transparent; border: 1px solid rgba(0,245,255,.18); color: var(--muted);
+      font-size: 11px; padding: 5px 14px;
     }
-    .btn-ghost:hover { border-color: var(--accent2); }
-    .btn-full { width: 100%; justify-content: center; }
+    .btn-ghost:hover { border-color: var(--cyan); color: var(--cyan); }
+    .btn-full { width: 100%; }
+    .btn:disabled { opacity: .35; cursor: not-allowed; }
+    .btn:disabled:hover { background: rgba(0,245,255,.1); box-shadow: none; color: var(--cyan); }
 
-    /* ── Access Tier ── */
-    .tier {
+    /* ── STATS ── */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px; margin-top: 4px;
+    }
+    .stat-box {
+      padding: 16px;
+      border: 1px solid rgba(0,245,255,.1);
+      background: rgba(0,245,255,.02);
+      position: relative;
+    }
+    .stat-box::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+      height: 1px; background: linear-gradient(90deg, var(--cyan), transparent);
+    }
+    .stat-label { font-size: 10px; letter-spacing: 2px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; }
+    .stat-value { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 700; color: var(--white); }
+    .stat-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    /* ── ADDRESS ── */
+    .addr-chip {
+      font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--cyan);
+      background: rgba(0,245,255,.07); border: 1px solid rgba(0,245,255,.2);
+      padding: 4px 12px; letter-spacing: .5px;
+    }
+
+    /* ── TIERS ── */
+    .tier-row {
       display: flex; align-items: center; gap: 16px;
-      padding: 16px; border-radius: 8px;
-      border: 1px solid var(--border);
-      margin-top: 12px;
-      transition: all 0.3s;
+      padding: 16px; border: 1px solid rgba(255,255,255,.06);
+      margin-bottom: 10px; transition: all .3s; position: relative;
     }
-    .tier.active { border-color: currentColor; }
-    .tier-icon { font-size: 28px; }
+    .tier-row.act { border-color: currentColor; }
+    .tier-row.act::after {
+      content: ''; position: absolute; inset: 0;
+      background: currentColor; opacity: .04; pointer-events: none;
+    }
+    .tier-icon { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 24px; border: 1px solid rgba(255,255,255,.08); }
     .tier-info { flex: 1; }
-    .tier-name { font-weight: 700; font-size: 16px; }
-    .tier-desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
-    .tier-req { font-size: 12px; margin-top: 4px; }
-    .tier-check { font-size: 22px; }
+    .tier-name { font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 700; }
+    .tier-desc { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .tier-req  { font-size: 11px; margin-top: 5px; letter-spacing: 1px; }
+    .tier-chk  { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 16px; border: 1px solid rgba(255,255,255,.1); }
+    .t-prem { color: var(--yellow); }
+    .t-buyer { color: var(--cyan); }
+    .t-none { color: var(--muted); }
 
-    .tier-premium  { color: #d29922; }
-    .tier-buyer    { color: var(--accent2); }
-    .tier-none     { color: var(--muted); }
-    .tier-loading  { color: var(--muted); }
-
-    /* ── Stats grid ── */
-    .stats {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 12px; margin-top: 8px;
+    /* Progress */
+    .prog-wrap { margin-top: 22px; }
+    .prog-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .prog-bar { height: 4px; background: rgba(255,255,255,.06); position: relative; overflow: hidden; }
+    .prog-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--cyan), var(--magenta));
+      box-shadow: 0 0 8px var(--cyan);
+      transition: width .9s cubic-bezier(.4,0,.2,1);
     }
-    .stat {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px; padding: 14px 16px;
-    }
-    .stat-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
-    .stat-value { font-size: 20px; font-weight: 700; color: var(--white); }
+    .prog-markers { display: flex; position: relative; margin-top: 5px; height: 14px; }
+    .p-mark { position: absolute; font-size: 10px; color: var(--muted); transform: translateX(-50%); }
 
-    /* ── Transfer form ── */
-    .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
-    .form-group input {
-      width: 100%;
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 8px; padding: 10px 14px;
-      color: var(--white); font-size: 14px;
-      outline: none; transition: border 0.15s;
+    /* ── FORM ── */
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
+    .form-input {
+      width: 100%; background: rgba(0,245,255,.03);
+      border: 1px solid rgba(0,245,255,.14); padding: 10px 14px;
+      color: var(--white); font-family: 'Share Tech Mono', monospace;
+      font-size: 13px; outline: none; transition: border .2s;
+      clip-path: polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);
     }
-    .form-group input:focus { border-color: var(--accent2); }
-    .form-group input::placeholder { color: var(--muted); }
+    .form-input:focus { border-color: var(--cyan); box-shadow: 0 0 12px rgba(0,245,255,.08); }
+    .form-input::placeholder { color: rgba(0,245,255,.22); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-    /* ── Toast ── */
+    /* ── MARKETPLACE ── */
+    .mkt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(265px, 1fr)); gap: 16px; }
+    .svc-card {
+      border: 1px solid rgba(0,245,255,.1);
+      background: rgba(0,245,255,.015);
+      padding: 20px; transition: all .25s; position: relative; overflow: hidden;
+    }
+    .svc-card::before {
+      content: ''; position: absolute; top: 0; left: -100%;
+      width: 50%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0,245,255,.04), transparent);
+      transition: left .6s;
+    }
+    .svc-card:hover::before { left: 150%; }
+    .svc-card:hover { border-color: rgba(0,245,255,.35); box-shadow: 0 0 24px rgba(0,245,255,.07); }
+    .svc-card.locked { opacity: .55; }
+    .svc-icon { font-size: 30px; margin-bottom: 12px; }
+    .svc-name {
+      font-family: 'Orbitron', sans-serif; font-size: 11px;
+      font-weight: 700; color: var(--white); margin-bottom: 7px; letter-spacing: 1.5px;
+    }
+    .svc-desc { font-size: 12px; color: var(--muted); line-height: 1.55; margin-bottom: 14px; }
+    .svc-footer { display: flex; align-items: center; justify-content: space-between; }
+    .svc-price { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 700; color: var(--cyan); }
+    .svc-price span { font-size: 10px; color: var(--muted); display: block; }
+    .tier-badge {
+      font-size: 10px; padding: 3px 9px;
+      border: 1px solid; letter-spacing: 1px; text-transform: uppercase;
+    }
+    .tier-badge.premium { border-color: var(--yellow); color: var(--yellow); }
+    .tier-badge.buyer   { border-color: var(--cyan);   color: var(--cyan); }
+    .tier-badge.locked  { border-color: var(--muted);  color: var(--muted); }
+    .svc-btn { margin-top: 14px; width: 100%; padding: 8px; font-size: 11px; }
+
+    /* ── TX HISTORY ── */
+    .tx-list { display: flex; flex-direction: column; gap: 8px; }
+    .tx-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; border: 1px solid rgba(255,255,255,.06);
+      font-size: 12px; transition: border .2s;
+    }
+    .tx-item:hover { border-color: rgba(0,245,255,.18); }
+    .tx-dir {
+      width: 30px; height: 30px; display: flex; align-items: center;
+      justify-content: center; font-size: 15px; border: 1px solid;
+    }
+    .tx-dir.out { border-color: rgba(255,0,144,.3); color: var(--magenta); }
+    .tx-dir.in  { border-color: rgba(0,255,65,.3);  color: var(--green); }
+    .tx-info { flex: 1; }
+    .tx-from { font-size: 11px; color: var(--muted); }
+    .tx-amount { font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700; }
+    .tx-amount.out { color: var(--magenta); }
+    .tx-amount.in  { color: var(--green); }
+    .tx-lnk { font-size: 11px; color: rgba(0,245,255,.45); text-decoration: none; }
+    .tx-lnk:hover { color: var(--cyan); }
+    .tx-empty { text-align: center; padding: 36px; color: var(--muted); font-size: 13px; }
+
+    /* ── ANALYTICS ── */
+    .ana-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .metric {
+      padding: 20px; border: 1px solid rgba(153,69,255,.18);
+      background: rgba(153,69,255,.025); position: relative;
+    }
+    .metric::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 100%; height: 2px;
+      background: linear-gradient(90deg, var(--purple), transparent);
+    }
+    .metric-icon { font-size: 22px; margin-bottom: 10px; }
+    .metric-lbl { font-size: 10px; letter-spacing: 2px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; }
+    .metric-val { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 700; color: var(--white); }
+    .metric-val.cy { color: var(--cyan); }
+    .metric-val.mg { color: var(--magenta); }
+    .metric-val.gn { color: var(--green); }
+    .metric-val.yw { color: var(--yellow); }
+    .metric-chg { font-size: 11px; margin-top: 6px; color: var(--muted); }
+
+    /* Burn */
+    .burn-visual { text-align: center; padding: 20px 0; }
+    .burn-flame {
+      font-size: 52px;
+      animation: burnp 1.5s ease-in-out infinite alternate;
+      display: inline-block;
+    }
+    @keyframes burnp {
+      from { transform: scale(1) rotate(-2deg); filter: drop-shadow(0 0 10px orange); }
+      to   { transform: scale(1.1) rotate(2deg); filter: drop-shadow(0 0 22px red) drop-shadow(0 0 40px orange); }
+    }
+
+    /* Contract row */
+    .ct-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; border: 1px solid rgba(0,245,255,.1);
+      background: rgba(0,245,255,.02); margin-top: 10px;
+    }
+    .ct-addr {
+      font-family: 'Share Tech Mono', monospace; font-size: 12px;
+      color: var(--cyan); text-decoration: none; word-break: break-all;
+    }
+    .ct-addr:hover { text-shadow: 0 0 8px var(--cyan); }
+
+    /* ── TOAST ── */
     #toast {
-      position: fixed; bottom: 24px; right: 24px;
-      padding: 12px 20px; border-radius: 8px;
-      font-size: 14px; font-weight: 500;
-      opacity: 0; transition: opacity 0.3s;
-      pointer-events: none; max-width: 360px;
-      border: 1px solid;
+      position: fixed; bottom: 28px; right: 28px; z-index: 9999;
+      padding: 12px 20px; font-family: 'Share Tech Mono', monospace; font-size: 13px;
+      opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s;
+      transform: translateY(8px); max-width: 360px; border: 1px solid;
+      clip-path: polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);
     }
-    #toast.show { opacity: 1; }
-    #toast.ok   { background: #0d3321; color: var(--green); border-color: var(--green); }
-    #toast.err  { background: #300a0a; color: var(--red);   border-color: var(--red); }
-    #toast.info { background: #0d2140; color: var(--accent2); border-color: var(--accent2); }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.ok   { background: rgba(0,255,65,.08); color: var(--green); border-color: var(--green); }
+    #toast.err  { background: rgba(255,51,51,.08); color: var(--red); border-color: var(--red); }
+    #toast.info { background: rgba(0,245,255,.07); color: var(--cyan); border-color: var(--cyan); }
+    #toast.warn { background: rgba(255,230,0,.07); color: var(--yellow); border-color: var(--yellow); }
 
-    /* ── Address chip ── */
-    .address-chip {
-      font-family: monospace; font-size: 13px;
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 20px; padding: 4px 12px; color: var(--text);
+    /* ── DIVIDER ── */
+    .div {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,245,255,.18), transparent);
+      margin: 20px 0;
     }
 
-    /* ── Contract link ── */
-    .contract-row {
-      display: flex; align-items: center; gap: 8px;
-      padding: 10px 14px;
-      background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 8px; margin-top: 8px;
+    /* ── SECTION HEADING ── */
+    .sec-hd {
+      font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 4px; color: var(--muted);
+      margin-bottom: 22px; display: flex; align-items: center; gap: 14px;
     }
-    .contract-row a {
-      font-family: monospace; font-size: 12px;
-      color: var(--accent2); text-decoration: none;
-      word-break: break-all;
+    .sec-hd::after {
+      content: ''; flex: 1; height: 1px;
+      background: linear-gradient(90deg, rgba(0,245,255,.18), transparent);
     }
-    .contract-row a:hover { text-decoration: underline; }
 
-    /* ── Divider ── */
-    .divider { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+    /* ── LOADING ── */
+    .spin {
+      display: inline-block; width: 13px; height: 13px;
+      border: 2px solid rgba(0,245,255,.2); border-top-color: var(--cyan);
+      border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Footer ── */
+    /* ── CONNECT PLACEHOLDER ── */
+    .conn-ph { text-align: center; padding: 52px 20px; }
+    .conn-ph .ph-icon { font-size: 48px; margin-bottom: 16px; }
+    .conn-ph p { color: var(--muted); font-size: 13px; margin-bottom: 22px; line-height: 1.6; }
+
     footer {
-      text-align: center; padding: 20px;
-      font-size: 12px; color: var(--muted);
-      border-top: 1px solid var(--border);
+      position: relative; z-index: 1; text-align: center; padding: 22px;
+      font-size: 10px; color: var(--muted); letter-spacing: 3px;
+      border-top: 1px solid rgba(0,245,255,.07);
     }
-    footer a { color: var(--accent2); text-decoration: none; }
+    footer a { color: var(--cyan); text-decoration: none; }
+    footer a:hover { text-shadow: 0 0 8px var(--cyan); }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: rgba(0,245,255,.18); }
+
+    @media (max-width: 600px) {
+      nav { display: none; }
+      .form-row { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <header>
-  <div class="logo-mark">PGM</div>
-  <div>
-    <h1>Pragma Access Gate <span>/ DApp</span></h1>
-  </div>
-  <div class="header-right">
-    <div class="network-badge" id="networkBadge">
-      <span class="dot"></span>Sepolia Testnet
+  <div class="logo">
+    <div class="logo-hex">PGM</div>
+    <div>
+      <div class="logo-text">PRAGMA<em> ACCESS</em></div>
+      <div class="logo-sub">/ DAPP v2.0 · CYBERPUNK EDITION</div>
     </div>
+  </div>
+  <nav>
+    <button class="nav-tab active" onclick="showTab('dashboard')">Dashboard</button>
+    <button class="nav-tab" onclick="showTab('marketplace')">Marketplace</button>
+    <button class="nav-tab" onclick="showTab('history')">Histórico</button>
+    <button class="nav-tab" onclick="showTab('analytics')">Analytics</button>
+    <button class="nav-tab" onclick="showTab('burn')">Queima</button>
+  </nav>
+  <div class="header-right">
+    <div class="net-badge" id="netBadge"><span class="net-dot"></span>SEPOLIA</div>
+    <button class="btn btn-cy" id="hdrConnect" style="padding:6px 16px;font-size:11px;" onclick="connectWallet()">CONECTAR</button>
+    <button class="btn btn-ghost" id="hdrDisconnect" onclick="disconnectWallet()" style="display:none;">SAIR</button>
   </div>
 </header>
 
 <main>
+
+  <!-- HERO -->
   <div class="hero">
-    <h2>Pragma Token — Gating de Acesso</h2>
-    <p>Demonstração da utilidade do PGM: saldo determina nível de acesso ao ecossistema.<br/>
-    500+ PGM → Premium · 200+ PGM → Buyer · &lt;200 PGM → Sem acesso</p>
+    <div class="hero-eye">◈ NearX Tokenomics · Aula 03 · ERC-20 Utility Gate · Sepolia</div>
+    <div class="hero-title">PRAGMA <span class="cy">TOKEN</span></div>
+    <p class="hero-sub">
+      Demonstração on-chain de utility gating via saldo PGM.<br/>
+      Saldo determina tier de acesso. Cada ação interage com o contrato real na Sepolia.
+    </p>
+    <div class="tier-pills">
+      <span class="tp p">≥ 500 PGM → PREMIUM</span>
+      <span class="tp b">≥ 200 PGM → BUYER</span>
+      <span class="tp n">&lt; 200 PGM → SEM ACESSO</span>
+    </div>
   </div>
 
-  <!-- Connect -->
-  <div class="card" id="connectCard">
-    <div class="card-title">Carteira</div>
-    <div id="connectSection">
-      <p style="color:var(--muted);font-size:14px;margin-bottom:16px;">
-        Conecte sua MetaMask na rede Sepolia para verificar seu nível de acesso.
-      </p>
-      <p style="color:var(--muted);font-size:12px;margin-bottom:16px;">
-        Se a MetaMask não for detectada, abra esta página via servidor local: <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;">npx serve dapp/</code> na pasta do projeto (não abra o arquivo direto pelo navegador).
-      </p>
-      <button class="btn btn-primary btn-full" onclick="connectWallet()">
-        🦊 Conectar MetaMask
-      </button>
-    </div>
-    <div id="connectedSection" style="display:none;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-        <span style="font-size:13px;color:var(--muted);">Endereço:</span>
-        <span class="address-chip" id="walletAddr">—</span>
-        <button class="btn btn-ghost" onclick="disconnectWallet()" style="padding:4px 12px;font-size:12px;margin-left:auto;">
-          Desconectar
-        </button>
+  <!-- ═══════ TAB: DASHBOARD ═══════ -->
+  <div class="section active" id="tab-dashboard">
+
+    <!-- Wallet -->
+    <div class="card" id="walletCard">
+      <div class="card-hd">
+        <div class="card-title">◈ Carteira</div>
+        <div class="card-tag" id="walletStatus">DESCONECTADO</div>
       </div>
-      <div class="stats">
-        <div class="stat">
-          <div class="stat-label">Saldo PGM</div>
-          <div class="stat-value" id="pgmBalance">—</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">ETH (Sepolia)</div>
-          <div class="stat-value" id="ethBalance">—</div>
+
+      <div id="connectSection">
+        <div class="conn-ph">
+          <div class="ph-icon">🦊</div>
+          <p>Conecte sua MetaMask na rede Sepolia para interagir com o contrato PGM e verificar seu nível de acesso ao ecossistema.</p>
+          <button class="btn btn-cy" onclick="connectWallet()">CONECTAR METAMASK</button>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Access Tier -->
-  <div class="card" id="tierCard" style="display:none;">
-    <div class="card-title">Nível de Acesso</div>
-
-    <div class="tier tier-premium" id="tierPremium">
-      <div class="tier-icon">👑</div>
-      <div class="tier-info">
-        <div class="tier-name">Premium</div>
-        <div class="tier-desc">Acesso completo: marketplace, analytics avançado, fee reduzida</div>
-        <div class="tier-req">Requer ≥ 500 PGM</div>
-      </div>
-      <div class="tier-check" id="checkPremium">⬜</div>
-    </div>
-
-    <div class="tier tier-buyer" id="tierBuyer">
-      <div class="tier-icon">🛒</div>
-      <div class="tier-info">
-        <div class="tier-name">Buyer</div>
-        <div class="tier-desc">Acesso ao marketplace para compra de serviços</div>
-        <div class="tier-req">Requer ≥ 200 PGM</div>
-      </div>
-      <div class="tier-check" id="checkBuyer">⬜</div>
-    </div>
-
-    <div class="tier tier-none" id="tierNone">
-      <div class="tier-icon">🔒</div>
-      <div class="tier-info">
-        <div class="tier-name">Sem Acesso</div>
-        <div class="tier-desc">Obtenha PGM via faucet ou compra no marketplace</div>
-        <div class="tier-req">Saldo insuficiente</div>
-      </div>
-      <div class="tier-check" id="checkNone">⬜</div>
-    </div>
-  </div>
-
-  <!-- Transfer -->
-  <div class="card" id="transferCard" style="display:none;">
-    <div class="card-title">Transferir PGM</div>
-    <div class="form-group">
-      <label>Endereço destinatário</label>
-      <input type="text" id="toAddress" placeholder="0x..." />
-    </div>
-    <div class="form-group">
-      <label>Quantidade (PGM)</label>
-      <input type="number" id="transferAmount" placeholder="ex: 100" min="1" step="1" />
-    </div>
-    <button class="btn btn-primary btn-full" id="transferBtn" onclick="transferPGM()">
-      Enviar PGM
-    </button>
-    <div id="txLink" style="display:none;margin-top:12px;">
-      <div class="contract-row">
-        <span style="font-size:13px;color:var(--muted);">Tx:</span>
-        <a id="txLinkAnchor" href="#" target="_blank">—</a>
+      <div id="connectedSection" style="display:none;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+          <span style="font-size:10px;color:var(--muted);letter-spacing:2px;">ENDEREÇO</span>
+          <span class="addr-chip" id="walletAddr">—</span>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-label">Saldo PGM</div>
+            <div class="stat-value" id="pgmBalance" style="color:var(--cyan);">—</div>
+            <div class="stat-sub" id="pgmPercent">—</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">ETH Sepolia</div>
+            <div class="stat-value" id="ethBalance" style="color:var(--green);">—</div>
+            <div class="stat-sub">Para pagar gas</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Tier Atual</div>
+            <div class="stat-value" id="tierLabel" style="color:var(--yellow);">—</div>
+            <div class="stat-sub" id="tierSub">—</div>
+          </div>
+        </div>
+        <div class="prog-wrap" id="progWrap">
+          <div class="prog-labels">
+            <span>Progresso ao próximo tier</span>
+            <span id="progLabel">—</span>
+          </div>
+          <div class="prog-bar">
+            <div class="prog-fill" id="progFill"></div>
+          </div>
+          <div class="prog-markers">
+            <span class="p-mark" style="left:40%">200 PGM</span>
+            <span class="p-mark" style="left:100%">500 PGM</span>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Contract info -->
-  <div class="card">
-    <div class="card-title">Contrato</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-bottom:8px;">
-      <span>Pragma Token (PGM)</span>
-      <span>·</span>
-      <span>ERC-20</span>
-      <span>·</span>
-      <span>Supply fixo: 10.000.000 PGM</span>
-      <span>·</span>
-      <span>Sepolia</span>
+    <!-- Tier -->
+    <div class="card" id="tierCard" style="display:none;">
+      <div class="card-hd"><div class="card-title">◈ Nível de Acesso</div></div>
+
+      <div class="tier-row t-prem" id="tierPremium">
+        <div class="tier-icon">👑</div>
+        <div class="tier-info">
+          <div class="tier-name">PREMIUM</div>
+          <div class="tier-desc">Marketplace completo · Analytics avançado · Fee 1% · Prestadores verificados · Prioridade em novos clientes</div>
+          <div class="tier-req" style="color:var(--yellow);">REQUER ≥ 500 PGM</div>
+        </div>
+        <div class="tier-chk" id="checkPremium">⬜</div>
+      </div>
+      <div class="tier-row t-buyer" id="tierBuyer">
+        <div class="tier-icon">🛒</div>
+        <div class="tier-info">
+          <div class="tier-name">BUYER</div>
+          <div class="tier-desc">Acesso ao marketplace · Compra de serviços Web3 · Fee 2% · Prestadores listados</div>
+          <div class="tier-req" style="color:var(--cyan);">REQUER ≥ 200 PGM</div>
+        </div>
+        <div class="tier-chk" id="checkBuyer">⬜</div>
+      </div>
+      <div class="tier-row t-none" id="tierNone">
+        <div class="tier-icon">🔒</div>
+        <div class="tier-info">
+          <div class="tier-name">SEM ACESSO</div>
+          <div class="tier-desc">Obtenha PGM via faucet ou compra para desbloquear funcionalidades do ecossistema</div>
+          <div class="tier-req">SALDO INSUFICIENTE</div>
+        </div>
+        <div class="tier-chk" id="checkNone">⬜</div>
+      </div>
     </div>
-    <div class="contract-row">
-      <span style="font-size:12px;color:var(--muted);">📋</span>
-      <a href="https://sepolia.etherscan.io/address/0xC7b1Fff31eC9ce8075C1fCE0339E751135e310eb"
-         target="_blank">
-        0xC7b1Fff31eC9ce8075C1fCE0339E751135e310eb
-      </a>
+
+    <!-- Transfer -->
+    <div class="card mg" id="transferCard" style="display:none;">
+      <div class="card-hd">
+        <div class="card-title">◈ Transferir PGM</div>
+        <div class="card-tag">ERC-20 TRANSFER</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Endereço Destinatário</label>
+        <input class="form-input" type="text" id="toAddress" placeholder="0x..." />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Quantidade (PGM)</label>
+          <input class="form-input" type="number" id="transferAmount" placeholder="ex: 100" min="1" />
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end;">
+          <button class="btn btn-mg btn-full" id="transferBtn" onclick="transferPGM()">ENVIAR PGM ▶</button>
+        </div>
+      </div>
+      <div id="txLink" style="display:none;margin-top:12px;">
+        <div class="ct-row">
+          <span style="font-size:10px;color:var(--muted);letter-spacing:2px;">TX</span>
+          <a class="ct-addr" id="txLinkAnchor" href="#" target="_blank">—</a>
+        </div>
+      </div>
     </div>
-  </div>
+
+    <!-- Contract info -->
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-title">◈ Contrato Deployado</div>
+        <div class="card-tag">SEPOLIA TESTNET</div>
+      </div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:10px;letter-spacing:1px;">
+        <span>PGM · ERC-20</span><span>SUPPLY: 10.000.000</span><span>DECIMALS: 18</span>
+      </div>
+      <div class="ct-row">
+        <span style="font-size:11px;color:var(--muted);">📋</span>
+        <a class="ct-addr" href="https://sepolia.etherscan.io/address/0xC7b1Fff31eC9ce8075C1fCE0339E751135e310eb" target="_blank">
+          0xC7b1Fff31eC9ce8075C1fCE0339E751135e310eb
+        </a>
+      </div>
+    </div>
+  </div><!-- /dashboard -->
+
+  <!-- ═══════ TAB: MARKETPLACE ═══════ -->
+  <div class="section" id="tab-marketplace">
+    <div class="sec-hd">◈ Marketplace de Serviços Web3</div>
+    <div class="card" style="margin-bottom:20px;">
+      <p style="font-size:13px;color:var(--muted);line-height:1.7;">
+        Simulação de marketplace descentralizado. Cada "contratação" executa uma transferência real de PGM na Sepolia, demonstrando a função de pagamento do token. Seu tier de acesso determina quais serviços você pode contratar.
+      </p>
+    </div>
+    <div id="mktNotConn" class="card">
+      <div class="conn-ph">
+        <div class="ph-icon">🛒</div>
+        <p>Conecte sua carteira para acessar o marketplace e contratar serviços com PGM.</p>
+        <button class="btn btn-cy" onclick="connectWallet()">CONECTAR METAMASK</button>
+      </div>
+    </div>
+    <div id="mktContent" style="display:none;">
+      <div class="mkt-grid" id="svcGrid"></div>
+    </div>
+  </div><!-- /marketplace -->
+
+  <!-- ═══════ TAB: HISTORY ═══════ -->
+  <div class="section" id="tab-history">
+    <div class="sec-hd">◈ Histórico de Transações</div>
+
+    <div class="card gn">
+      <div class="card-hd">
+        <div class="card-title">◈ Transferências Recentes</div>
+        <button class="btn btn-ghost" style="margin-left:auto;" onclick="refreshHistory()">↻ ATUALIZAR</button>
+      </div>
+      <div id="txHistList">
+        <div class="conn-ph">
+          <div class="ph-icon">📡</div>
+          <p>Conecte sua carteira para visualizar o histórico de transferências.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div class="card-hd">
+        <div class="card-title">◈ Approve / Allowance</div>
+        <div class="card-tag">ERC-20 APPROVE</div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6;">
+        Autorize outro endereço (ex: contrato DeFi) a gastar PGM em seu nome. Mecanismo essencial do padrão ERC-20 para interoperabilidade com protocolos.
+      </p>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Endereço Spender</label>
+          <input class="form-input" type="text" id="approveAddr" placeholder="0x..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantidade (PGM)</label>
+          <input class="form-input" type="number" id="approveAmount" placeholder="ex: 1000" />
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button class="btn btn-cy" onclick="approvePGM()">APPROVE ▶</button>
+        <button class="btn btn-ghost" onclick="checkAllowance()">VERIFICAR ALLOWANCE</button>
+      </div>
+      <div id="allowResult" style="display:none;margin-top:12px;" class="ct-row">
+        <span style="font-size:10px;color:var(--muted);letter-spacing:2px;">ALLOWANCE</span>
+        <span id="allowVal" style="color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:12px;">—</span>
+      </div>
+    </div>
+  </div><!-- /history -->
+
+  <!-- ═══════ TAB: ANALYTICS ═══════ -->
+  <div class="section" id="tab-analytics">
+    <div class="sec-hd">◈ Token Analytics</div>
+    <div class="ana-grid">
+      <div class="metric">
+        <div class="metric-icon">📊</div>
+        <div class="metric-lbl">Total Supply</div>
+        <div class="metric-val cy" id="metSupply">10.000.000</div>
+        <div class="metric-chg">Supply fixo · sem mint · ERC-20</div>
+      </div>
+      <div class="metric">
+        <div class="metric-icon">💎</div>
+        <div class="metric-lbl">Seu % do Supply</div>
+        <div class="metric-val yw" id="metYourPct">—</div>
+        <div class="metric-chg" id="metYourSub">Conecte a carteira</div>
+      </div>
+      <div class="metric">
+        <div class="metric-icon">🔥</div>
+        <div class="metric-lbl">Tokens Queimados</div>
+        <div class="metric-val mg" id="metBurned">—</div>
+        <div class="metric-chg">Enviados para 0x000...dead</div>
+      </div>
+      <div class="metric">
+        <div class="metric-icon">⚡</div>
+        <div class="metric-lbl">Tier Ativo</div>
+        <div class="metric-val gn" id="metTierVal">—</div>
+        <div class="metric-chg" id="metTierSub">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-icon">🌐</div>
+        <div class="metric-lbl">Rede</div>
+        <div class="metric-val cy">Sepolia</div>
+        <div class="metric-chg">Ethereum Testnet · chainId 11155111</div>
+      </div>
+      <div class="metric">
+        <div class="metric-icon">🏗️</div>
+        <div class="metric-lbl">Padrão</div>
+        <div class="metric-val">ERC-20</div>
+        <div class="metric-chg">Solidity · 18 decimals · OpenZeppelin</div>
+      </div>
+    </div>
+
+    <div class="card pu" style="margin-top:24px;">
+      <div class="card-hd"><div class="card-title">◈ Distribuição de Supply</div></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;font-size:12px;">
+        <div>
+          <div style="color:var(--cyan);font-family:'Orbitron',sans-serif;font-size:10px;margin-bottom:8px;letter-spacing:2px;">VENDA PÚBLICA</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:22px;color:var(--cyan);">40%</div>
+          <div style="color:var(--muted);">4.000.000 PGM · sem vesting</div>
+        </div>
+        <div>
+          <div style="color:var(--green);font-family:'Orbitron',sans-serif;font-size:10px;margin-bottom:8px;letter-spacing:2px;">ECOSSISTEMA</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:22px;color:var(--green);">30%</div>
+          <div style="color:var(--muted);">3.000.000 PGM · liberação gradual</div>
+        </div>
+        <div>
+          <div style="color:var(--magenta);font-family:'Orbitron',sans-serif;font-size:10px;margin-bottom:8px;letter-spacing:2px;">EQUIPE</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:22px;color:var(--magenta);">20%</div>
+          <div style="color:var(--muted);">2.000.000 PGM · cliff 12m + vest 24m</div>
+        </div>
+        <div>
+          <div style="color:var(--yellow);font-family:'Orbitron',sans-serif;font-size:10px;margin-bottom:8px;letter-spacing:2px;">RESERVA</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:22px;color:var(--yellow);">10%</div>
+          <div style="color:var(--muted);">1.000.000 PGM · cliff 6m</div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /analytics -->
+
+  <!-- ═══════ TAB: BURN ═══════ -->
+  <div class="section" id="tab-burn">
+    <div class="sec-hd">◈ Queima de Tokens</div>
+
+    <div class="card rd">
+      <div class="card-hd">
+        <div class="card-title">◈ Burn PGM</div>
+        <div class="card-tag">DEFLAÇÃO MANUAL</div>
+      </div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:20px;">
+        Queime tokens enviando para o endereço <code style="color:var(--red);font-size:12px;">0x000000000000000000000000000000000000dEaD</code>.
+        Tokens queimados são removidos permanentemente de circulação. Demonstra o conceito do BME Token (Aula 02) — queima manual vs. queima adaptativa automática.
+      </p>
+      <div class="burn-visual">
+        <span class="burn-flame">🔥</span>
+        <div style="font-family:'Orbitron',sans-serif;font-size:10px;color:var(--muted);margin-top:10px;letter-spacing:3px;">BURN ADDRESS</div>
+        <div style="font-size:11px;color:var(--red);margin-top:5px;font-family:'Share Tech Mono',monospace;">0x000000000000000000000000000000000000dEaD</div>
+      </div>
+      <div class="div"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Quantidade a Queimar</label>
+          <input class="form-input" type="number" id="burnAmount" placeholder="ex: 50" min="1" />
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end;">
+          <button class="btn btn-rd btn-full" id="burnBtn" onclick="burnPGM()">🔥 QUEIMAR PGM</button>
+        </div>
+      </div>
+      <div id="burnTxLink" style="display:none;margin-top:12px;" class="ct-row">
+        <span style="font-size:10px;color:var(--muted);letter-spacing:2px;">BURN TX</span>
+        <a id="burnTxAnchor" class="ct-addr" href="#" target="_blank">—</a>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div class="card-hd"><div class="card-title">◈ BME vs. Queima Manual</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:12px;color:var(--muted);">
+        <div>
+          <div style="color:var(--cyan);font-family:'Orbitron',sans-serif;font-size:10px;margin-bottom:10px;letter-spacing:2px;">BME TOKEN (AULA 02)</div>
+          <div style="line-height:1.9;">• Queima adaptativa automática<br/>• Taxa aumenta com demanda<br/>• Inspirado no EIP-1559<br/>• Deflação programática on-chain<br/>• Sem intervenção manual</div>
+        </div>
+        <div>
+          <div style="color:var(--yellow);font-family:'Orbitron',sans-serif;font-size:10px;margin-bottom:10px;letter-spacing:2px;">PGM (QUEIMA MANUAL)</div>
+          <div style="line-height:1.9;">• Burn voluntário pelo holder<br/>• Sinalização de comprometimento<br/>• Reduz circulante imediatamente<br/>• Prova de convicção on-chain<br/>• Verificável no Etherscan</div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /burn -->
+
 </main>
 
 <div id="toast"></div>
 
 <footer>
-  Pragma Protocol · Aula 03 Bônus · NearX Tokenomics ·
-  <a href="https://github.com/danielgorgonha/pragma-protocol" target="_blank">GitHub</a>
+  PRAGMA PROTOCOL · AULA 03 BÔNUS · NEARX TOKENOMICS ·
+  <a href="https://github.com/danielgorgonha/pragma-protocol" target="_blank">GITHUB</a>
 </footer>
 
 <script>
-const PGM_ADDRESS = "0xC7b1Fff31eC9ce8075C1fCE0339E751135e310eb";
+// ═══════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════
+const PGM_ADDRESS  = "0xC7b1Fff31eC9ce8075C1fCE0339E751135e310eb";
+const BURN_ADDRESS = "0x000000000000000000000000000000000000dEaD";
+const TOTAL_SUPPLY = 10_000_000;
 const PGM_ABI = [
   "function balanceOf(address) view returns (uint256)",
   "function transfer(address to, uint256 amount) returns (bool)",
+  "function approve(address spender, uint256 amount) returns (bool)",
+  "function allowance(address owner, address spender) view returns (uint256)",
   "function decimals() view returns (uint8)",
-  "function symbol() view returns (string)",
-  "function name() view returns (string)",
   "function totalSupply() view returns (uint256)",
   "event Transfer(address indexed from, address indexed to, uint256 value)"
 ];
 
-let provider, signer, pgm, userAddress;
-let ethereumProvider = null; // single provider for wallet_switchEthereumChain etc.
+const SERVICES = [
+  { id:1, icon:"🔍", name:"Smart Contract Audit",
+    desc:"Auditoria completa de segurança para contratos ERC-20, DeFi ou NFT. Relatório com findings e mitigações.",
+    price:500, tier:"premium" },
+  { id:2, icon:"⚡", name:"ZK Circuit Design",
+    desc:"Design e implementação de circuitos Noir/Cairo para provas ZK. Ideal para privacidade on-chain.",
+    price:800, tier:"premium" },
+  { id:3, icon:"🌉", name:"Cross-chain Bridge Analysis",
+    desc:"Análise de arquitetura bridge, modelos de trust, DA layers e riscos para projetos multi-chain.",
+    price:600, tier:"premium" },
+  { id:4, icon:"🎨", name:"Frontend DApp",
+    desc:"Interface Web3 com ethers.js/wagmi. Dark theme, MetaMask integration, responsive.",
+    price:300, tier:"buyer" },
+  { id:5, icon:"📊", name:"Tokenomics Report",
+    desc:"Análise completa de tokenomics: supply, utility, vesting, comparativo de mercado.",
+    price:250, tier:"buyer" },
+  { id:6, icon:"🔗", name:"Solidity Deployment",
+    desc:"Deploy em mainnet/testnet com Hardhat/Foundry. Scripts de verificação Etherscan inclusos.",
+    price:200, tier:"buyer" }
+];
 
-function getEthereumProvider() {
-  const e = window.ethereum;
-  if (!e) return null;
-  // Multiple wallets: use only MetaMask; ignore Nightly and others
-  if (e.providers && Array.isArray(e.providers)) {
-    const metaMask = e.providers.find(function (p) {
-      return p.isMetaMask && !p.isNightly;
-    });
-    return metaMask || null;
-  }
-  // Single provider: do not use Nightly
+// ═══════════════════════════════════
+// STATE
+// ═══════════════════════════════════
+let provider, signer, pgm, userAddress;
+let ethereumProvider = null;
+let userPGMBalance = 0;
+let txHistory = [];
+
+// ═══════════════════════════════════
+// UTILS
+// ═══════════════════════════════════
+function toast(msg, type="info") {
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.className = "show " + type;
+  setTimeout(() => { el.className = ""; }, 4500);
+}
+function shortAddr(a) { return a.slice(0,6)+"..."+a.slice(-4); }
+function getEthProvider() {
+  const e = window.ethereum; if (!e) return null;
+  if (e.providers?.length) return e.providers.find(p => p.isMetaMask && !p.isNightly) || null;
   if (e.isNightly) return null;
   return e;
 }
 
-function toast(msg, type = "info") {
-  const el = document.getElementById("toast");
-  el.textContent = msg;
-  el.className = `show ${type}`;
-  setTimeout(() => { el.className = ""; }, 4000);
+// ═══════════════════════════════════
+// TAB NAV
+// ═══════════════════════════════════
+function showTab(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  const tabs = ['dashboard','marketplace','history','analytics','burn'];
+  document.querySelectorAll('.nav-tab')[tabs.indexOf(id)].classList.add('active');
 }
 
-function shortAddr(addr) {
-  return addr.slice(0, 6) + "..." + addr.slice(-4);
-}
-
-async function connectWithProvider(providerToUse) {
-  var accounts = await providerToUse.request({ method: "eth_requestAccounts", params: [] });
-  if (!accounts || accounts.length === 0) return null;
-  ethereumProvider = providerToUse;
+// ═══════════════════════════════════
+// WALLET
+// ═══════════════════════════════════
+async function connectWithProvider(p) {
+  const accounts = await p.request({ method:"eth_requestAccounts" });
+  if (!accounts?.length) return null;
+  ethereumProvider = p;
   provider = new ethers.providers.Web3Provider(ethereumProvider);
-  var network = await provider.getNetwork();
-  if (network.chainId !== 11155111) {
-    toast("Troque para Sepolia Testnet (chainId 11155111)", "err");
+  const net = await provider.getNetwork();
+  if (net.chainId !== 11155111) {
+    toast("Trocando para Sepolia...", "info");
     try {
-      await ethereumProvider.request({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: "0xaa36a7" }]
-      });
+      await ethereumProvider.request({ method:"wallet_switchEthereumChain", params:[{chainId:"0xaa36a7"}] });
       provider = new ethers.providers.Web3Provider(ethereumProvider);
-    } catch(e) { return null; }
+    } catch(e) { toast("Erro ao trocar de rede.", "err"); return null; }
   }
   signer = provider.getSigner();
   userAddress = await signer.getAddress();
   pgm = new ethers.Contract(PGM_ADDRESS, PGM_ABI, signer);
-  document.getElementById("networkBadge").classList.add("connected");
+
+  document.getElementById("netBadge").classList.add("connected");
   document.getElementById("walletAddr").textContent = shortAddr(userAddress);
+  document.getElementById("walletStatus").textContent = "CONECTADO";
   document.getElementById("connectSection").style.display = "none";
   document.getElementById("connectedSection").style.display = "block";
   document.getElementById("tierCard").style.display = "block";
   document.getElementById("transferCard").style.display = "block";
+  document.getElementById("hdrConnect").style.display = "none";
+  document.getElementById("hdrDisconnect").style.display = "block";
+  document.getElementById("mktNotConn").style.display = "none";
+  document.getElementById("mktContent").style.display = "block";
+
   await refreshBalances();
+  await refreshHistory();
+  await refreshAnalytics();
+  renderMarketplace();
+
   pgm.on("Transfer", async (from, to) => {
-    if (from.toLowerCase() === userAddress.toLowerCase() ||
-        to.toLowerCase()   === userAddress.toLowerCase()) {
-      await refreshBalances();
-    }
+    const f=from.toLowerCase(), t=to.toLowerCase(), u=userAddress.toLowerCase();
+    if (f===u||t===u) { await refreshBalances(); await refreshHistory(); await refreshAnalytics(); }
   });
   ethereumProvider.on("accountsChanged", () => location.reload());
-  ethereumProvider.on("chainChanged",    () => location.reload());
-  toast("Conectado com sucesso! ✓", "ok");
+  ethereumProvider.on("chainChanged", () => location.reload());
+  toast("Conectado: "+shortAddr(userAddress), "ok");
   return true;
 }
 
 async function connectWallet() {
-  if (!window.ethereum) {
-    toast("Nenhuma carteira Ethereum detectada. Instale MetaMask ou outra carteira compatível.", "err");
-    return;
-  }
+  if (!window.ethereum) { toast("MetaMask não detectada. Instale em metamask.io", "err"); return; }
   try {
-    var providerToUse = getEthereumProvider();
-    if (providerToUse) {
-      try {
-        var ok = await connectWithProvider(providerToUse);
-        if (ok) return;
-      } catch (e) {
-        var msg = (e && e.message) ? e.message : String(e);
-        if (msg.indexOf("No active wallet found") === -1 && msg.indexOf("no active wallet") === -1) throw e;
-      }
-    }
-    if (window.ethereum && window.ethereum !== providerToUse) {
-      var ok = await connectWithProvider(window.ethereum);
-      if (ok) return;
-    }
-    toast("Não foi possível conectar. Defina uma carteira como ativa (ícone puzzle) ou use janela anónima só com MetaMask.", "err");
+    const p = getEthProvider();
+    if (p) { const ok = await connectWithProvider(p); if (ok) return; }
+    if (window.ethereum !== p) { const ok = await connectWithProvider(window.ethereum); if (ok) return; }
+    toast("Não foi possível conectar.", "err");
   } catch(e) {
-    const msg = (e && e.message) ? e.message : String(e);
-    if (msg.indexOf("Unexpected error") !== -1 || msg.indexOf("selectExtension") !== -1) {
-      toast("Erro ao selecionar carteira. Escolha MetaMask no popup ou desative outras extensões.", "err");
-    } else if (msg.indexOf("User rejected") !== -1 || msg.indexOf("4001") !== -1) {
-      toast("Conexão recusada.", "err");
-    } else {
-      toast("Erro ao conectar: " + msg, "err");
-    }
-  }
-}
-
-async function refreshBalances() {
-  if (!pgm) return;
-  const [pgmRaw, ethRaw] = await Promise.all([
-    pgm.balanceOf(userAddress),
-    provider.getBalance(userAddress)
-  ]);
-  const pgmBalance = parseFloat(ethers.utils.formatUnits(pgmRaw, 18));
-  const ethBalance = parseFloat(ethers.utils.formatEther(ethRaw));
-
-  document.getElementById("pgmBalance").textContent =
-    pgmBalance.toLocaleString("pt-BR", { maximumFractionDigits: 2 }) + " PGM";
-  document.getElementById("ethBalance").textContent =
-    ethBalance.toFixed(4) + " ETH";
-
-  updateTier(pgmBalance);
-}
-
-function updateTier(balance) {
-  const isPremium = balance >= 500;
-  const isBuyer   = balance >= 200 && !isPremium;
-  const isNone    = balance < 200;
-
-  // reset
-  ["Premium","Buyer","None"].forEach(t => {
-    document.getElementById("tier"+t).classList.remove("active");
-    document.getElementById("check"+t).textContent = "⬜";
-  });
-
-  if (isPremium) {
-    document.getElementById("tierPremium").classList.add("active");
-    document.getElementById("checkPremium").textContent = "✅";
-  } else if (isBuyer) {
-    document.getElementById("tierBuyer").classList.add("active");
-    document.getElementById("checkBuyer").textContent = "✅";
-  } else {
-    document.getElementById("tierNone").classList.add("active");
-    document.getElementById("checkNone").textContent = "✅";
-  }
-}
-
-async function transferPGM() {
-  if (!pgm) { toast("Conecte sua carteira primeiro", "err"); return; }
-
-  const to = document.getElementById("toAddress").value.trim();
-  const amount = document.getElementById("transferAmount").value.trim();
-
-  if (!ethers.utils.isAddress(to)) {
-    toast("Endereço inválido", "err"); return;
-  }
-  if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
-    toast("Quantidade inválida", "err"); return;
-  }
-
-  const btn = document.getElementById("transferBtn");
-  btn.disabled = true;
-  btn.textContent = "Enviando...";
-  document.getElementById("txLink").style.display = "none";
-
-  try {
-    const parsed = ethers.utils.parseUnits(amount, 18);
-    const tx = await pgm.transfer(to, parsed);
-    toast("Transação enviada! Aguardando confirmação...", "info");
-
-    const receipt = await tx.wait();
-    const anchor = document.getElementById("txLinkAnchor");
-    anchor.href = `https://sepolia.etherscan.io/tx/${receipt.transactionHash}`;
-    anchor.textContent = receipt.transactionHash;
-    document.getElementById("txLink").style.display = "block";
-
-    toast(`${amount} PGM enviados! ✓`, "ok");
-    document.getElementById("toAddress").value = "";
-    document.getElementById("transferAmount").value = "";
-    await refreshBalances();
-  } catch(e) {
-    toast("Erro: " + (e.reason || e.message || "falha na transação"), "err");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Enviar PGM";
+    const m = e?.message||String(e);
+    if (m.includes("4001")||m.includes("rejected")) toast("Conexão recusada.", "err");
+    else toast("Erro: "+m.slice(0,80), "err");
   }
 }
 
 function disconnectWallet() {
-  provider = signer = pgm = userAddress = null;
-  document.getElementById("networkBadge").classList.remove("connected");
-  document.getElementById("connectSection").style.display = "block";
-  document.getElementById("connectedSection").style.display = "none";
-  document.getElementById("tierCard").style.display = "none";
-  document.getElementById("transferCard").style.display = "none";
+  provider=signer=pgm=userAddress=null; userPGMBalance=0;
+  document.getElementById("netBadge").classList.remove("connected");
+  document.getElementById("connectSection").style.display="block";
+  document.getElementById("connectedSection").style.display="none";
+  document.getElementById("tierCard").style.display="none";
+  document.getElementById("transferCard").style.display="none";
+  document.getElementById("walletStatus").textContent="DESCONECTADO";
+  document.getElementById("hdrConnect").style.display="block";
+  document.getElementById("hdrDisconnect").style.display="none";
+  document.getElementById("mktNotConn").style.display="block";
+  document.getElementById("mktContent").style.display="none";
   toast("Desconectado", "info");
 }
+
+// ═══════════════════════════════════
+// BALANCES & TIER
+// ═══════════════════════════════════
+async function refreshBalances() {
+  if (!pgm) return;
+  const [pgmRaw, ethRaw] = await Promise.all([pgm.balanceOf(userAddress), provider.getBalance(userAddress)]);
+  const pgmBal = parseFloat(ethers.utils.formatUnits(pgmRaw, 18));
+  const ethBal = parseFloat(ethers.utils.formatEther(ethRaw));
+  userPGMBalance = pgmBal;
+  document.getElementById("pgmBalance").textContent = pgmBal.toLocaleString("pt-BR",{maximumFractionDigits:2})+" PGM";
+  document.getElementById("pgmPercent").textContent = ((pgmBal/TOTAL_SUPPLY)*100).toFixed(4)+"% do supply";
+  document.getElementById("ethBalance").textContent = ethBal.toFixed(4)+" ETH";
+  updateTier(pgmBal); updateProgress(pgmBal);
+}
+
+function updateTier(bal) {
+  const isPrem = bal >= 500, isBuy = bal >= 200 && !isPrem;
+  ["Premium","Buyer","None"].forEach(t => {
+    document.getElementById("tier"+t).classList.remove("act");
+    document.getElementById("check"+t).textContent = "⬜";
+  });
+  if (isPrem) {
+    document.getElementById("tierPremium").classList.add("act");
+    document.getElementById("checkPremium").textContent = "✅";
+    document.getElementById("tierLabel").textContent = "PREMIUM";
+    document.getElementById("tierLabel").style.color = "var(--yellow)";
+    document.getElementById("tierSub").textContent = "Fee 1% · Acesso total";
+    document.getElementById("metTierVal").textContent = "PREMIUM";
+    document.getElementById("metTierSub").textContent = "≥500 PGM · fee 1%";
+  } else if (isBuy) {
+    document.getElementById("tierBuyer").classList.add("act");
+    document.getElementById("checkBuyer").textContent = "✅";
+    document.getElementById("tierLabel").textContent = "BUYER";
+    document.getElementById("tierLabel").style.color = "var(--cyan)";
+    document.getElementById("tierSub").textContent = "Fee 2% · Marketplace";
+    document.getElementById("metTierVal").textContent = "BUYER";
+    document.getElementById("metTierSub").textContent = "≥200 PGM · fee 2%";
+  } else {
+    document.getElementById("tierNone").classList.add("act");
+    document.getElementById("checkNone").textContent = "✅";
+    document.getElementById("tierLabel").textContent = "NENHUM";
+    document.getElementById("tierLabel").style.color = "var(--muted)";
+    document.getElementById("tierSub").textContent = "< 200 PGM";
+    document.getElementById("metTierVal").textContent = "NENHUM";
+    document.getElementById("metTierSub").textContent = "Adquira PGM para acesso";
+  }
+  renderMarketplace();
+}
+
+function updateProgress(bal) {
+  let pct, lbl;
+  if (bal >= 500) { pct = 100; lbl = "TIER MÁXIMO ATINGIDO"; }
+  else if (bal >= 200) { pct = (bal/500)*100; lbl = "Faltam "+(500-bal).toFixed(0)+" PGM para PREMIUM"; }
+  else { pct = (bal/200)*100; lbl = "Faltam "+(200-bal).toFixed(0)+" PGM para BUYER"; }
+  document.getElementById("progFill").style.width = Math.min(pct,100)+"%";
+  document.getElementById("progLabel").textContent = lbl;
+}
+
+// ═══════════════════════════════════
+// TRANSFER
+// ═══════════════════════════════════
+async function transferPGM() {
+  if (!pgm) { toast("Conecte sua carteira primeiro","err"); return; }
+  const to = document.getElementById("toAddress").value.trim();
+  const amount = document.getElementById("transferAmount").value.trim();
+  if (!ethers.utils.isAddress(to)) { toast("Endereço inválido","err"); return; }
+  if (!amount || parseFloat(amount) <= 0) { toast("Quantidade inválida","err"); return; }
+  if (parseFloat(amount) > userPGMBalance) { toast("Saldo insuficiente","err"); return; }
+  const btn = document.getElementById("transferBtn");
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> ENVIANDO...';
+  document.getElementById("txLink").style.display = "none";
+  try {
+    const tx = await pgm.transfer(to, ethers.utils.parseUnits(amount, 18));
+    toast("Tx enviada! Aguardando...", "info");
+    const r = await tx.wait();
+    document.getElementById("txLinkAnchor").href = "https://sepolia.etherscan.io/tx/"+r.transactionHash;
+    document.getElementById("txLinkAnchor").textContent = r.transactionHash;
+    document.getElementById("txLink").style.display = "block";
+    toast(amount+" PGM enviados ✓", "ok");
+    document.getElementById("toAddress").value = "";
+    document.getElementById("transferAmount").value = "";
+  } catch(e) { toast("Erro: "+(e.reason||e.message||"falha"),"err"); }
+  finally { btn.disabled=false; btn.textContent="ENVIAR PGM ▶"; }
+}
+
+// ═══════════════════════════════════
+// MARKETPLACE
+// ═══════════════════════════════════
+function renderMarketplace() {
+  const grid = document.getElementById("svcGrid"); if (!grid) return;
+  const isPrem = userPGMBalance >= 500, isBuy = userPGMBalance >= 200;
+  grid.innerHTML = SERVICES.map(s => {
+    const canBuy = s.tier === "premium" ? isPrem : isBuy;
+    const tClass = s.tier === "premium" ? "premium" : "buyer";
+    const tLabel = s.tier === "premium" ? "PREMIUM" : "BUYER";
+    return `<div class="svc-card ${!canBuy?'locked':''}">
+      <div class="svc-icon">${s.icon}</div>
+      <div class="svc-name">${s.name}</div>
+      <div class="svc-desc">${s.desc}</div>
+      <div class="svc-footer">
+        <div class="svc-price">${s.price} PGM<span>preço em token</span></div>
+        <div class="tier-badge ${canBuy?tClass:'locked'}">${tLabel}</div>
+      </div>
+      ${canBuy
+        ? `<button class="btn btn-cy svc-btn" onclick="buyService(${s.id},${s.price})">CONTRATAR ▶</button>`
+        : `<button class="btn svc-btn" disabled style="opacity:.28;background:transparent;border:1px solid var(--muted);color:var(--muted);clip-path:polygon(10px 0%,100% 0%,calc(100%-10px) 100%,0% 100%);">🔒 REQUER ${tLabel}</button>`
+      }
+    </div>`;
+  }).join('');
+}
+
+async function buyService(id, price) {
+  if (!pgm) { toast("Conecte sua carteira","err"); return; }
+  const svc = SERVICES.find(s => s.id===id); if (!svc) return;
+  if (userPGMBalance < price) { toast("Saldo insuficiente. Você precisa de "+price+" PGM.","err"); return; }
+  toast("Iniciando contratação: "+svc.name+"...","info");
+  try {
+    const tx = await pgm.transfer(PGM_ADDRESS, ethers.utils.parseUnits(price.toString(), 18));
+    toast("Confirmando...","info");
+    const r = await tx.wait();
+    toast("✓ "+svc.name+" contratado! "+price+" PGM transferidos.","ok");
+    txHistory.unshift({ hash:r.transactionHash, direction:"out", amount:price, to:shortAddr(PGM_ADDRESS), label:"Marketplace: "+svc.name, block:0 });
+    await refreshBalances();
+    renderHistory();
+  } catch(e) { toast("Erro: "+(e.reason||e.message||"falha"),"err"); }
+}
+
+// ═══════════════════════════════════
+// TX HISTORY
+// ═══════════════════════════════════
+async function refreshHistory() {
+  if (!pgm || !userAddress) return;
+  try {
+    const block = await provider.getBlockNumber();
+    const from  = Math.max(0, block - 2000);
+    const [logsOut, logsIn] = await Promise.all([
+      pgm.queryFilter(pgm.filters.Transfer(userAddress, null), from, block),
+      pgm.queryFilter(pgm.filters.Transfer(null, userAddress), from, block)
+    ]);
+    txHistory = [
+      ...logsOut.map(l => ({ hash:l.transactionHash, direction:"out", amount:parseFloat(ethers.utils.formatUnits(l.args.value,18)), to:shortAddr(l.args.to), block:l.blockNumber })),
+      ...logsIn.map(l => ({ hash:l.transactionHash, direction:"in", amount:parseFloat(ethers.utils.formatUnits(l.args.value,18)), from:shortAddr(l.args.from), block:l.blockNumber }))
+    ].sort((a,b)=>(b.block||0)-(a.block||0)).slice(0,20);
+    renderHistory();
+  } catch(e) { console.error("History:",e); }
+}
+
+function renderHistory() {
+  const el = document.getElementById("txHistList");
+  if (!userAddress) { el.innerHTML = `<div class="tx-empty">◈ Conecte sua carteira para visualizar o histórico</div>`; return; }
+  if (!txHistory.length) { el.innerHTML = `<div class="tx-empty">◈ Nenhuma transação encontrada nos últimos 2000 blocos</div>`; return; }
+  el.innerHTML = `<div class="tx-list">${txHistory.map(tx => `
+    <div class="tx-item">
+      <div class="tx-dir ${tx.direction}">${tx.direction==='out'?'↑':'↓'}</div>
+      <div class="tx-info">
+        <div class="tx-from">${tx.direction==='out'?'Para: '+tx.to:'De: '+tx.from}${tx.label?' · '+tx.label:''}</div>
+        <div class="tx-amount ${tx.direction}">${tx.direction==='out'?'-':'+'} ${tx.amount.toLocaleString('pt-BR',{maximumFractionDigits:2})} PGM</div>
+      </div>
+      <a class="tx-lnk" href="https://sepolia.etherscan.io/tx/${tx.hash}" target="_blank">${tx.hash.slice(0,10)}... ↗</a>
+    </div>`).join('')}</div>`;
+}
+
+// ═══════════════════════════════════
+// APPROVE
+// ═══════════════════════════════════
+async function approvePGM() {
+  if (!pgm) { toast("Conecte sua carteira","err"); return; }
+  const spender = document.getElementById("approveAddr").value.trim();
+  const amount  = document.getElementById("approveAmount").value.trim();
+  if (!ethers.utils.isAddress(spender)) { toast("Endereço inválido","err"); return; }
+  if (!amount || parseFloat(amount) <= 0) { toast("Quantidade inválida","err"); return; }
+  try {
+    const tx = await pgm.approve(spender, ethers.utils.parseUnits(amount, 18));
+    toast("Approve enviado...","info");
+    await tx.wait();
+    toast(amount+" PGM aprovados para "+shortAddr(spender)+" ✓","ok");
+  } catch(e) { toast("Erro: "+(e.reason||e.message),"err"); }
+}
+
+async function checkAllowance() {
+  if (!pgm) { toast("Conecte sua carteira","err"); return; }
+  const spender = document.getElementById("approveAddr").value.trim();
+  if (!ethers.utils.isAddress(spender)) { toast("Informe um endereço válido","err"); return; }
+  try {
+    const raw = await pgm.allowance(userAddress, spender);
+    const val = parseFloat(ethers.utils.formatUnits(raw, 18));
+    document.getElementById("allowVal").textContent = val.toLocaleString("pt-BR",{maximumFractionDigits:2})+" PGM";
+    document.getElementById("allowResult").style.display = "flex";
+  } catch(e) { toast("Erro: "+e.message,"err"); }
+}
+
+// ═══════════════════════════════════
+// BURN
+// ═══════════════════════════════════
+async function burnPGM() {
+  if (!pgm) { toast("Conecte sua carteira","err"); return; }
+  const amount = document.getElementById("burnAmount").value.trim();
+  if (!amount || parseFloat(amount) <= 0) { toast("Informe a quantidade","err"); return; }
+  if (parseFloat(amount) > userPGMBalance) { toast("Saldo insuficiente","err"); return; }
+  if (!confirm("⚠️ AÇÃO IRREVERSÍVEL\n\nQueimar "+amount+" PGM?\nTokens enviados ao endereço burn NÃO podem ser recuperados.")) return;
+  const btn = document.getElementById("burnBtn");
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> QUEIMANDO...';
+  try {
+    const tx = await pgm.transfer(BURN_ADDRESS, ethers.utils.parseUnits(amount, 18));
+    toast("Burn tx enviada...","info");
+    const r = await tx.wait();
+    document.getElementById("burnTxAnchor").href = "https://sepolia.etherscan.io/tx/"+r.transactionHash;
+    document.getElementById("burnTxAnchor").textContent = r.transactionHash;
+    document.getElementById("burnTxLink").style.display = "flex";
+    toast("🔥 "+amount+" PGM queimados permanentemente ✓","ok");
+    document.getElementById("burnAmount").value = "";
+    await refreshBalances(); await refreshAnalytics();
+  } catch(e) { toast("Erro: "+(e.reason||e.message),"err"); }
+  finally { btn.disabled=false; btn.innerHTML="🔥 QUEIMAR PGM"; }
+}
+
+// ═══════════════════════════════════
+// ANALYTICS
+// ═══════════════════════════════════
+async function refreshAnalytics() {
+  if (!pgm || !userAddress) return;
+  try {
+    const burnedRaw = await pgm.balanceOf(BURN_ADDRESS);
+    const burned = parseFloat(ethers.utils.formatUnits(burnedRaw, 18));
+    document.getElementById("metBurned").textContent = burned > 0 ? burned.toLocaleString("pt-BR",{maximumFractionDigits:2})+" PGM" : "0 PGM";
+    const pct = ((userPGMBalance/TOTAL_SUPPLY)*100).toFixed(4);
+    document.getElementById("metYourPct").textContent = pct+"%";
+    document.getElementById("metYourSub").textContent = userPGMBalance.toLocaleString("pt-BR",{maximumFractionDigits:2})+" PGM em carteira";
+  } catch(e) { console.error("Analytics:",e); }
+}
+
+// ═══════════════════════════════════
+// INIT
+// ═══════════════════════════════════
+renderHistory();
+renderMarketplace();
 </script>
 </body>
 </html>
