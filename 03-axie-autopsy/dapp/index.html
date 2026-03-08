@@ -946,15 +946,27 @@ async function connectWithProvider(p) {
 }
 
 async function connectWallet() {
-  if (!window.ethereum) { toast("MetaMask não detectada. Instale em metamask.io", "err"); return; }
+  if (!window.ethereum) { toast("Nenhuma carteira detectada. Instale MetaMask ou abra via servidor (não file://).", "err"); return; }
   try {
-    const p = getEthProvider();
-    if (p) { const ok = await connectWithProvider(p); if (ok) return; }
-    if (window.ethereum !== p) { const ok = await connectWithProvider(window.ethereum); if (ok) return; }
-    toast("Não foi possível conectar.", "err");
+    var p = getEthProvider();
+    if (p) {
+      try {
+        var ok = await connectWithProvider(p);
+        if (ok) return;
+      } catch (e1) {
+        var msg1 = (e1 && e1.message) ? e1.message : String(e1);
+        if (msg1.indexOf("No active wallet found") === -1 && msg1.indexOf("no active wallet") === -1) throw e1;
+      }
+    }
+    if (window.ethereum && window.ethereum !== p) {
+      var ok = await connectWithProvider(window.ethereum);
+      if (ok) return;
+    }
+    toast("Não foi possível conectar. Defina uma carteira como ativa (ícone puzzle) ou use janela anónima só com MetaMask.", "err");
   } catch(e) {
     const m = e?.message||String(e);
     if (m.includes("4001")||m.includes("rejected")) toast("Conexão recusada.", "err");
+    else if (m.includes("Unexpected error")||m.includes("selectExtension")) toast("Erro ao selecionar carteira. Escolha MetaMask no popup ou desative outras extensões.", "err");
     else toast("Erro: "+m.slice(0,80), "err");
   }
 }
