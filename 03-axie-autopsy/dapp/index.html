@@ -356,6 +356,18 @@ const PGM_ABI = [
 ];
 
 let provider, signer, pgm, userAddress;
+let ethereumProvider = null; // single provider for wallet_switchEthereumChain etc.
+
+function getEthereumProvider() {
+  const e = window.ethereum;
+  if (!e) return null;
+  // Multiple wallets: prefer MetaMask, else first provider
+  if (e.providers && Array.isArray(e.providers)) {
+    const metaMask = e.providers.find(function (p) { return p.isMetaMask; });
+    return metaMask || e.providers[0] || e;
+  }
+  return e;
+}
 
 function toast(msg, type = "info") {
   const el = document.getElementById("toast");
@@ -369,23 +381,24 @@ function shortAddr(addr) {
 }
 
 async function connectWallet() {
-  if (!window.ethereum) {
+  ethereumProvider = getEthereumProvider();
+  if (!ethereumProvider) {
     toast("MetaMask não detectada. Se já instalou: abra esta página via servidor local (ex: npx serve dapp/). Se não, instale a extensão MetaMask.", "err");
     return;
   }
   try {
-    provider = new ethers.providers.Web3Provider(window.ethereum);
+    provider = new ethers.providers.Web3Provider(ethereumProvider);
     await provider.send("eth_requestAccounts", []);
 
     const network = await provider.getNetwork();
     if (network.chainId !== 11155111) {
       toast("Troque para Sepolia Testnet (chainId 11155111)", "err");
       try {
-        await window.ethereum.request({
+        await ethereumProvider.request({
           method: "wallet_switchEthereumChain",
           params: [{ chainId: "0xaa36a7" }]
         });
-        provider = new ethers.providers.Web3Provider(window.ethereum);
+        provider = new ethers.providers.Web3Provider(ethereumProvider);
       } catch(e) { return; }
     }
 
@@ -410,12 +423,17 @@ async function connectWallet() {
       }
     });
 
-    window.ethereum.on("accountsChanged", () => location.reload());
-    window.ethereum.on("chainChanged",    () => location.reload());
+    ethereumProvider.on("accountsChanged", () => location.reload());
+    ethereumProvider.on("chainChanged",    () => location.reload());
 
     toast("Conectado com sucesso! ✓", "ok");
   } catch(e) {
-    toast("Erro ao conectar: " + (e.message || e), "err");
+    const msg = (e && e.message) ? e.message : String(e);
+    if (msg.indexOf("Unexpected error") !== -1 || msg.indexOf("selectExtension") !== -1) {
+      toast("Erro ao selecionar carteira. Tente: escolher MetaMask no popup ou desativar outras extensões de carteira (Rabby, etc.).", "err");
+    } else {
+      toast("Erro ao conectar: " + msg, "err");
+    }
   }
 }
 
