@@ -384,62 +384,71 @@ function shortAddr(addr) {
   return addr.slice(0, 6) + "..." + addr.slice(-4);
 }
 
+async function connectWithProvider(providerToUse) {
+  var accounts = await providerToUse.request({ method: "eth_requestAccounts", params: [] });
+  if (!accounts || accounts.length === 0) return null;
+  ethereumProvider = providerToUse;
+  provider = new ethers.providers.Web3Provider(ethereumProvider);
+  var network = await provider.getNetwork();
+  if (network.chainId !== 11155111) {
+    toast("Troque para Sepolia Testnet (chainId 11155111)", "err");
+    try {
+      await ethereumProvider.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: "0xaa36a7" }]
+      });
+      provider = new ethers.providers.Web3Provider(ethereumProvider);
+    } catch(e) { return null; }
+  }
+  signer = provider.getSigner();
+  userAddress = await signer.getAddress();
+  pgm = new ethers.Contract(PGM_ADDRESS, PGM_ABI, signer);
+  document.getElementById("networkBadge").classList.add("connected");
+  document.getElementById("walletAddr").textContent = shortAddr(userAddress);
+  document.getElementById("connectSection").style.display = "none";
+  document.getElementById("connectedSection").style.display = "block";
+  document.getElementById("tierCard").style.display = "block";
+  document.getElementById("transferCard").style.display = "block";
+  await refreshBalances();
+  pgm.on("Transfer", async (from, to) => {
+    if (from.toLowerCase() === userAddress.toLowerCase() ||
+        to.toLowerCase()   === userAddress.toLowerCase()) {
+      await refreshBalances();
+    }
+  });
+  ethereumProvider.on("accountsChanged", () => location.reload());
+  ethereumProvider.on("chainChanged",    () => location.reload());
+  toast("Conectado com sucesso! ✓", "ok");
+  return true;
+}
+
 async function connectWallet() {
-  ethereumProvider = getEthereumProvider();
-  if (!ethereumProvider) {
-    toast("MetaMask não disponível para esta página. Esta DApp usa só MetaMask: desative outras carteiras (ex: Nightly) ou abra em janela anónima só com MetaMask.", "err");
+  if (!window.ethereum) {
+    toast("Nenhuma carteira Ethereum detectada. Instale MetaMask ou outra carteira compatível.", "err");
     return;
   }
   try {
-    var accounts = await ethereumProvider.request({ method: "eth_requestAccounts", params: [] });
-    if (!accounts || accounts.length === 0) {
-      toast("Nenhuma conta conectada. Desbloqueie a MetaMask e autorize este site.", "err");
-      return;
-    }
-    provider = new ethers.providers.Web3Provider(ethereumProvider);
-    const network = await provider.getNetwork();
-    if (network.chainId !== 11155111) {
-      toast("Troque para Sepolia Testnet (chainId 11155111)", "err");
+    var providerToUse = getEthereumProvider();
+    if (providerToUse) {
       try {
-        await ethereumProvider.request({
-          method: "wallet_switchEthereumChain",
-          params: [{ chainId: "0xaa36a7" }]
-        });
-        provider = new ethers.providers.Web3Provider(ethereumProvider);
-      } catch(e) { return; }
-    }
-
-    signer = provider.getSigner();
-    userAddress = await signer.getAddress();
-    pgm = new ethers.Contract(PGM_ADDRESS, PGM_ABI, signer);
-
-    document.getElementById("networkBadge").classList.add("connected");
-    document.getElementById("walletAddr").textContent = shortAddr(userAddress);
-    document.getElementById("connectSection").style.display = "none";
-    document.getElementById("connectedSection").style.display = "block";
-    document.getElementById("tierCard").style.display = "block";
-    document.getElementById("transferCard").style.display = "block";
-
-    await refreshBalances();
-
-    // listen for transfers
-    pgm.on("Transfer", async (from, to) => {
-      if (from.toLowerCase() === userAddress.toLowerCase() ||
-          to.toLowerCase()   === userAddress.toLowerCase()) {
-        await refreshBalances();
+        var ok = await connectWithProvider(providerToUse);
+        if (ok) return;
+      } catch (e) {
+        var msg = (e && e.message) ? e.message : String(e);
+        if (msg.indexOf("No active wallet found") === -1 && msg.indexOf("no active wallet") === -1) throw e;
       }
-    });
-
-    ethereumProvider.on("accountsChanged", () => location.reload());
-    ethereumProvider.on("chainChanged",    () => location.reload());
-
-    toast("Conectado com sucesso! ✓", "ok");
+    }
+    if (window.ethereum && window.ethereum !== providerToUse) {
+      var ok = await connectWithProvider(window.ethereum);
+      if (ok) return;
+    }
+    toast("Não foi possível conectar. Defina uma carteira como ativa (ícone puzzle) ou use janela anónima só com MetaMask.", "err");
   } catch(e) {
     const msg = (e && e.message) ? e.message : String(e);
     if (msg.indexOf("Unexpected error") !== -1 || msg.indexOf("selectExtension") !== -1) {
-      toast("Erro ao selecionar carteira. Tente: escolher MetaMask no popup ou desativar outras extensões de carteira (Rabby, Nightly, etc.).", "err");
-    } else if (msg.indexOf("No active wallet found") !== -1 || msg.indexOf("no active wallet") !== -1) {
-      toast("Nenhuma carteira ativa. Desbloqueie a MetaMask, crie ou selecione uma conta e clique no ícone da MetaMask para definir como carteira ativa para este site.", "err");
+      toast("Erro ao selecionar carteira. Escolha MetaMask no popup ou desative outras extensões.", "err");
+    } else if (msg.indexOf("User rejected") !== -1 || msg.indexOf("4001") !== -1) {
+      toast("Conexão recusada.", "err");
     } else {
       toast("Erro ao conectar: " + msg, "err");
     }
