@@ -391,9 +391,12 @@ async function connectWallet() {
     return;
   }
   try {
+    var accounts = await ethereumProvider.request({ method: "eth_requestAccounts", params: [] });
+    if (!accounts || accounts.length === 0) {
+      toast("Nenhuma conta conectada. Desbloqueie a MetaMask e autorize este site.", "err");
+      return;
+    }
     provider = new ethers.providers.Web3Provider(ethereumProvider);
-    await provider.send("eth_requestAccounts", []);
-
     const network = await provider.getNetwork();
     if (network.chainId !== 11155111) {
       toast("Troque para Sepolia Testnet (chainId 11155111)", "err");
@@ -434,7 +437,9 @@ async function connectWallet() {
   } catch(e) {
     const msg = (e && e.message) ? e.message : String(e);
     if (msg.indexOf("Unexpected error") !== -1 || msg.indexOf("selectExtension") !== -1) {
-      toast("Erro ao selecionar carteira. Tente: escolher MetaMask no popup ou desativar outras extensões de carteira (Rabby, etc.).", "err");
+      toast("Erro ao selecionar carteira. Tente: escolher MetaMask no popup ou desativar outras extensões de carteira (Rabby, Nightly, etc.).", "err");
+    } else if (msg.indexOf("No active wallet found") !== -1 || msg.indexOf("no active wallet") !== -1) {
+      toast("Nenhuma carteira ativa. Desbloqueie a MetaMask, crie ou selecione uma conta e clique no ícone da MetaMask para definir como carteira ativa para este site.", "err");
     } else {
       toast("Erro ao conectar: " + msg, "err");
     }
